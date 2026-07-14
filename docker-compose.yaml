@@ -1,0 +1,36 @@
+services:
+  database:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sgh_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sgh_db"]
+      interval: 5s
+      retries: 10
+      start_period: 10s
+      timeout: 5s
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  db-init:
+    image: postgres:16-alpine
+    container_name: postgres-init
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: postgres
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    command: ["psql", "-h", "database", "-U", "postgres", "-d", "sgh_db", "-f", "/docker-entrypoint-initdb.d/criacao_tabela.sql", "-f", "/docker-entrypoint-initdb.d/insercao_dados.sql"]
+    restart: "no"
+
+
+volumes:
+  postgres_data:
