@@ -11,8 +11,8 @@ from psycopg2.extras import RealDictCursor
 ROOT = Path(__file__).resolve().parent
 
 DB_CONFIG = {
-    "host": "localhost",
-    "port": "5435",
+    "host": "database",
+    "port": "5432",
     "database": "sgh_db",
     "user": "postgres",
     "password": "postgres",
