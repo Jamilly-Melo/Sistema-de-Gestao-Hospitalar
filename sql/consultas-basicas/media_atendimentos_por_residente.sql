@@ -11,6 +11,6 @@ JOIN profissional pr
     ON r.id_profissional = pr.id_pessoa
 JOIN pessoa pe
     ON pr.id_pessoa = pe.id_pessoa
-JOIN atendimento a
+LEFT JOIN atendimento a
     ON pe.id_pessoa = a.id_residente
 GROUP BY id, nome, CRM, ano_residencia;
