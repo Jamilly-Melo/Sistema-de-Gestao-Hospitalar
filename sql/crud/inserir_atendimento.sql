@@ -31,4 +31,11 @@ AND EXISTS (
 )
 AND EXISTS (
     SELECT 1 FROM preceptor WHERE id_profissional = v.id_preceptor
-);
+)
+RETURNING
+    id_atendimento,
+    data_hora,
+    duracao_minutos,
+    id_paciente,
+    id_residente,
+    id_preceptor;

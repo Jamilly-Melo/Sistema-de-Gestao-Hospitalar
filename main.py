@@ -96,7 +96,10 @@ QUERIES: dict[str, dict[str, dict]] = {
         },
         "Inserir atendimento": {
             "path": "sql/crud/inserir_atendimento.sql",
-            "description": "Insere atendimento se paciente, residente e preceptor existirem.",
+            "description": (
+                "Insere atendimento se paciente, residente e preceptor existirem. "
+                "IDs do seed: pacientes 1–5, residentes 6–10, preceptores 11–15."
+            ),
             "params": [
                 {
                     "name": "data_hora",
@@ -110,9 +113,24 @@ QUERIES: dict[str, dict[str, dict]] = {
                     "type": "int",
                     "default": 30,
                 },
-                {"name": "id_paciente", "label": "ID do paciente", "type": "int"},
-                {"name": "id_residente", "label": "ID do residente", "type": "int"},
-                {"name": "id_preceptor", "label": "ID do preceptor", "type": "int"},
+                {
+                    "name": "id_paciente",
+                    "label": "ID do paciente",
+                    "type": "int",
+                    "default": 1,
+                },
+                {
+                    "name": "id_residente",
+                    "label": "ID do residente",
+                    "type": "int",
+                    "default": 6,
+                },
+                {
+                    "name": "id_preceptor",
+                    "label": "ID do preceptor",
+                    "type": "int",
+                    "default": 11,
+                },
             ],
             "mutates": True,
         },
@@ -137,23 +155,26 @@ def load_sql(relative_path: str) -> str:
     return (ROOT / relative_path).read_text(encoding="utf-8")
 
 
-def collect_params(param_defs: list[dict]) -> list:
+def collect_params(param_defs: list[dict], key_prefix: str = "") -> list:
     values: list = []
     for param in param_defs:
-        key = param["name"]
+        key = f"{key_prefix}{param['name']}"
         label = param["label"]
         param_type = param["type"]
 
         if param_type == "text":
             values.append(st.text_input(label, key=f"param_{key}"))
         elif param_type == "int":
+            # Streamlit number_input devolve float; o SQL espera int.
             values.append(
-                st.number_input(
-                    label,
-                    min_value=1,
-                    step=1,
-                    value=int(param.get("default", 1)),
-                    key=f"param_{key}",
+                int(
+                    st.number_input(
+                        label,
+                        min_value=1,
+                        step=1,
+                        value=int(param.get("default", 1)),
+                        key=f"param_{key}",
+                    )
                 )
             )
         elif param_type == "select":
@@ -222,7 +243,7 @@ def main() -> None:
     params: list = []
     if query["params"]:
         st.markdown("#### Parâmetros")
-        params = collect_params(query["params"])
+        params = collect_params(query["params"], key_prefix=f"{category}_{query_name}_")
     else:
         st.info("Esta query não possui parâmetros.")
 
@@ -232,7 +253,13 @@ def main() -> None:
             df, rowcount = run_query(sql, params, query["mutates"])
 
             if query["mutates"]:
-                st.success(f"Operação concluída. Linhas afetadas: {rowcount}.")
+                if rowcount and rowcount > 0:
+                    st.success(f"Operação concluída. Linhas afetadas: {rowcount}.")
+                else:
+                    st.warning(
+                        "Nenhuma linha afetada. Confira se os IDs existem "
+                        "(paciente / residente / preceptor) e se as condições da query foram atendidas."
+                    )
 
             if df is not None:
                 if df.empty:
