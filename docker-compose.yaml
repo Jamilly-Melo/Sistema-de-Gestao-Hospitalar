@@ -31,6 +31,15 @@ services:
     command: ["psql", "-h", "database", "-U", "postgres", "-d", "sgh_db", "-f", "/docker-entrypoint-initdb.d/criacao_tabela.sql", "-f", "/docker-entrypoint-initdb.d/insercao_dados.sql"]
     restart: "no"
 
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    depends_on:
+      database:
+        condition: service_healthy
 
 volumes:
   postgres_data:
