@@ -1,0 +1,57 @@
+"""Fixtures compartilhadas.
+
+`executar_sql` usa exec_driver_sql, e não text(), porque os arquivos .sql do
+projeto usam placeholders %s do psycopg2. O text() do SQLAlchemy espera :nome e
+trataria os %s como texto literal.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+import pytest
+from sqlalchemy.orm import Session
+
+from sgh.database import SessionLocal, engine
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def ordenado(linhas: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Ordem canônica para comparar resultados.
+
+    Várias consultas do projeto não têm ORDER BY, então a ordem das linhas é
+    indefinida e comparar listas diretamente daria falso negativo.
+    """
+    return sorted(linhas, key=lambda linha: [str(valor) for valor in linha.values()])
+
+
+@pytest.fixture
+def executar_sql():
+    def _executar(caminho: str, params: tuple = ()) -> list[dict[str, Any]]:
+        sql = (ROOT / caminho).read_text(encoding="utf-8")
+        with SessionLocal() as session:
+            resultado = session.connection().exec_driver_sql(sql, params or None)
+            return [dict(linha) for linha in resultado.mappings()]
+
+    return _executar
+
+
+@pytest.fixture
+def session_revertida():
+    """Sessão cujas escritas são desfeitas ao fim do teste.
+
+    join_transaction_mode="create_savepoint" faz os commits internos das funções
+    de escrita virarem savepoints dentro da transação externa, de modo que o
+    rollback final desfaz tudo.
+    """
+    conexao = engine.connect()
+    transacao = conexao.begin()
+    session = Session(bind=conexao, join_transaction_mode="create_savepoint")
+    try:
+        yield session
+    finally:
+        session.close()
+        transacao.rollback()
+        conexao.close()

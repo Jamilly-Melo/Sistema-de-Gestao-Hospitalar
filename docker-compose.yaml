@@ -28,7 +28,16 @@ services:
       PGPASSWORD: postgres
     volumes:
       - ./sql:/docker-entrypoint-initdb.d:ro
-    command: ["psql", "-h", "database", "-U", "postgres", "-d", "sgh_db", "-f", "/docker-entrypoint-initdb.d/criacao_tabela.sql", "-f", "/docker-entrypoint-initdb.d/insercao_dados.sql"]
+    command: [
+      "psql", "-h", "database", "-U", "postgres", "-d", "sgh_db",
+      "-v", "ON_ERROR_STOP=1",
+      "-f", "/docker-entrypoint-initdb.d/criacao_tabela.sql",
+      "-f", "/docker-entrypoint-initdb.d/insercao_dados.sql",
+      "-f", "/docker-entrypoint-initdb.d/etapa2/alteracoes.sql",
+      "-f", "/docker-entrypoint-initdb.d/etapa2/procedures.sql",
+      "-f", "/docker-entrypoint-initdb.d/etapa2/triggers.sql",
+      "-f", "/docker-entrypoint-initdb.d/etapa2/views.sql"
+    ]
     restart: "no"
 
   frontend:
