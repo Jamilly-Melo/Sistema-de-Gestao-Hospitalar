@@ -60,7 +60,7 @@ VALUES (
     13
 );
 
--- A segunda inserção será impedida pela trigger trg_check_sobreposicao_escala.
+-- A Sessão 2 ficará bloqueada até o COMMIT da Sessão 1. Depois disso, a trigger impedirá a inserção da escala duplicada.
 
 ROLLBACK;
 
