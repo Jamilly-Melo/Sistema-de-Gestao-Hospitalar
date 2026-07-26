@@ -14,7 +14,7 @@ Projeto acadêmico de banco de dados que modela o domínio de um hospital univer
 |--------|------------|
 | Banco | PostgreSQL 16 |
 | Interface | Streamlit + pandas |
-| Acesso aos dados | psycopg2 |
+| Acesso aos dados | SQLAlchemy 2.0 (ORM), psycopg2 como driver |
 | Empacotamento | uv + Docker Compose |
 | Linguagem | Python ≥ 3.12 |
 
@@ -38,17 +38,19 @@ Diagramas e material de modelagem estão em `documentacao/`.
 
 ```text
 .
-├── main.py                 # Interface Streamlit
-├── docker-compose.yaml     # database + db-init + frontend
-├── dockerfile              # Imagem do frontend Streamlit
+├── main.py                 # Interface Streamlit (única camada que conhece a UI)
+├── sgh/                    # Camada de dados — não importa streamlit nem pandas
+│   ├── config.py           # DATABASE_URL a partir de variáveis de ambiente
+│   ├── database.py         # engine, sessões e helpers de execução
+│   ├── models/             # 14 models declarativos, por subdomínio
+│   ├── queries/            # basicas.py, analiticas.py, crud.py
+│   └── catalog.py          # catálogo de consultas consumido pela interface
+├── tests/                  # paridade contra os .sql + testes funcionais do CRUD
+├── docker-compose.yaml     # database + db-init + frontend + profiles de teste
+├── dockerfile
 ├── pyproject.toml / uv.lock
 ├── documentacao/           # Modelagem conceitual e relacional (PDF)
-└── sql/
-    ├── criacao_tabela.sql          # DDL (DROP + CREATE + constraints)
-    ├── insercao_dados.sql          # Carga inicial
-    ├── consultas-basicas/          # Consultas simples
-    ├── consultas-analiticas/       # Agregações / análises
-    └── crud/                       # INSERT / UPDATE / DELETE parametrizados
+└── sql/                    # DDL, carga, consultas e etapa 2 — fonte do schema
 ```
 
 ## Queries SQL
@@ -74,11 +76,16 @@ Diagramas e material de modelagem estão em `documentacao/`.
 
 | Arquivo | Operação | Parâmetros (`%s`) |
 |---------|----------|-------------------|
-| `inserir_atendimento.sql` | INSERT com `EXISTS` para paciente/residente/preceptor | `data_hora`, `duracao_minutos`, `id_paciente`, `id_residente`, `id_preceptor` |
+| `inserir_atendimento.sql` | INSERT com `EXISTS` para paciente/residente/preceptor/unidade | `data_hora`, `duracao_minutos`, `id_paciente`, `id_residente`, `id_preceptor`, `id_unidade` |
 | `atualizar_dados_paciente.sql` | UPDATE de `endereco` ou `num_convenio` (via CTE) | `campo`, `valor`, `id_paciente` |
 | `remover_procedimento_realizado.sql` | DELETE só se `faturado = FALSE` | `id_atendimento`, `id_procedimento` |
 
-As queries CRUD usam placeholders `%s` compatíveis com `psycopg2` (`cursor.execute(sql, params)`).
+As queries CRUD usam placeholders `%s`.
+
+Os arquivos `.sql` continuam sendo a fonte do schema (aplicados pelo `db-init`) e o
+material da entrega. A aplicação não os executa mais: as consultas equivalentes
+vivem em `sgh/queries/`, e os testes de paridade garantem que as duas versões
+devolvem o mesmo resultado.
 
 ## Interface Streamlit
 
@@ -89,14 +96,23 @@ O `main.py` organiza as queries por categoria na sidebar:
 3. Preencha os **parâmetros** (quando houver).
 4. Clique em **Executar** — resultados em tabela; operações de escrita fazem `commit`.
 
-Conexão fixa (ambiente Docker):
+### Configuração de conexão
 
-```python
-host = "database"   # nome do serviço no Compose
-port = "5432"       # porta interna do container Postgres
-database = "sgh_db"
-user = "postgres"
-password = "postgres"
+A conexão vem de variáveis de ambiente, com os defaults do Compose:
+
+| Variável | Default | Uso |
+|---|---|---|
+| `DB_HOST` | `database` | hostname do serviço no Compose |
+| `DB_PORT` | `5432` | porta interna do container |
+| `DB_NAME` | `sgh_db` | |
+| `DB_USER` | `postgres` | |
+| `DB_PASSWORD` | `postgres` | |
+
+Para rodar fora do Docker, aponte para a porta publicada no host — sem editar
+código:
+
+```powershell
+$env:DB_HOST="localhost"; $env:DB_PORT="15435"; uv run streamlit run main.py
 ```
 
 ## Como executar
@@ -111,7 +127,7 @@ Serviços:
 
 | Serviço | Função | Porta no host |
 |---------|--------|---------------|
-| `database` | PostgreSQL | `5435` → `5432` |
+| `database` | PostgreSQL | `15435` → `5432` |
 | `db-init` | Aplica `criacao_tabela.sql` + `insercao_dados.sql` | — (one-shot) |
 | `frontend` | Streamlit | `8501` |
 
@@ -120,24 +136,73 @@ Acesse a interface em [http://localhost:8501](http://localhost:8501).
 Cliente SQL externo (pgAdmin, DBeaver, `psql`) pode conectar em:
 
 - Host: `localhost`
-- Porta: `5435`
+- Porta: `15435`
 - DB / user / senha: `sgh_db` / `postgres` / `postgres`
 
 ### Localmente (sem Docker no frontend)
 
 Útil para desenvolver a UI. O Postgres ainda precisa estar acessível (Compose só com `database`, ou instância local).
 
-Nesse caso, altere temporariamente o `DB_CONFIG` no `main.py` para `host="localhost"` e `port="5435"`, depois:
-
 ```powershell
 uv sync
-uv run streamlit run main.py
 ```
+
+Depois, veja "Configuração de conexão" acima para apontar para a porta publicada no host.
+
+## Testes
+
+```powershell
+docker compose --profile teste run --rm --build testes
+```
+
+Roda a suíte inteira contra um banco recém-criado: 7 testes de paridade, que
+executam cada consulta ORM e o `.sql` que ela substitui e comparam os resultados,
+e testes funcionais das 3 operações de escrita. No total são 48 testes (paridade
+das consultas de leitura, funcionais das operações de escrita, models, conexão e
+catálogo).
+
+Localmente, com o banco do Compose no ar:
+
+```powershell
+$env:DB_HOST="localhost"; $env:DB_PORT="15435"; uv run pytest -v
+```
+
+### Demonstração de concorrência
+
+```powershell
+docker compose --profile concorrencia-sql up concorrencia-sessao-1 concorrencia-sessao-2
+```
+
+Sobe dois clientes `psql` simultâneos que tentam escalar o mesmo residente para a
+mesma data, turno e unidade. A sessão 2 fica bloqueada no `SELECT ... FOR UPDATE`
+até o `COMMIT` da sessão 1 e então é rejeitada pela trigger
+`trg_check_sobreposicao_escala`.
+
+É uma demonstração visual, não uma verificação automatizada — a coordenação entre
+as sessões é por tempo. Concorrência não é coberta pela suíte de testes.
+
+> **Lendo o log:** o `psql` faz buffering da saída quando não está num terminal
+> interativo, então as linhas dos dois containers aparecem intercaladas de um
+> jeito que pode sugerir que a sessão 2 não esperou. Ela esperou. Para conferir
+> de verdade, compare a duração dos dois containers:
+>
+> ```powershell
+> docker inspect --format '{{.Name}} {{.State.StartedAt}} {{.State.FinishedAt}}' `
+>   sistema-de-gestao-hospitalar-concorrencia-sessao-2-1
+> ```
+>
+> A sessão 2 leva cerca de 10 segundos e termina logo após o `COMMIT` da sessão 1
+> — esse é o tempo em que ela ficou bloqueada no `SELECT ... FOR UPDATE`.
 
 ## Principais considerações
 
 1. **Host/porta dentro vs fora do container**  
-   No Compose, o frontend fala com o Postgres pelo hostname `database` na porta **5432**. A porta **5435** é só o mapeamento no host (`5435:5432`).
+   No Compose, o frontend fala com o Postgres pelo hostname `database` na porta **5432**. A porta **15435** é só o mapeamento no host (`15435:5432`).
+
+   A porta publicada é **15435**, e não 5435, porque o Windows reserva
+   dinamicamente a faixa 5358–5457 para o `winnat`; o bind na 5435 falha com
+   "socket access forbidden". Verifique com
+   `netsh int ipv4 show excludedportrange protocol=tcp`.
 
 2. **`db-init` e volume persistente**  
    O volume `postgres_data` preserva os dados entre restarts. O serviço `db-init` executa os scripts SQL a cada subida (o DDL começa com `DROP TABLE ... CASCADE`). Se quiser um banco “limpo” do zero, remova o volume:
@@ -150,7 +215,7 @@ uv run streamlit run main.py
    Placeholders são `%s` (psycopg2). Nomes de coluna **não** podem ser passados como `%s` com segurança; em `atualizar_dados_paciente.sql` o parâmetro `campo` escolhe entre valores permitidos (`endereco` | `num_convenio`) via CTE.
 
 4. **Integridade no CRUD**  
-   - Inserção de atendimento só ocorre se paciente, residente e preceptor existirem (`INSERT ... SELECT ... WHERE EXISTS`).  
+   - Inserção de atendimento só ocorre se paciente, residente, preceptor e unidade existirem (`INSERT ... SELECT ... WHERE EXISTS`).  
    - Remoção de procedimento realizado exige `faturado = FALSE`.
 
 5. **Dependências de build da imagem**  
@@ -158,6 +223,11 @@ uv run streamlit run main.py
 
 6. **Documentação de modelagem**  
    PDFs de modelo conceitual, relacional e normalização estão em `documentacao/` e `documentacao/diagramas/`.
+
+7. **Camadas e o frontend futuro**  
+   `sgh/` não importa `streamlit` nem `pandas` — as funções devolvem
+   `list[dict]`. Isso é deliberado: permite servir a mesma camada de dados por
+   HTTP (FastAPI) para um frontend Next sem reescrever nada.
 
 ## Credenciais padrão (desenvolvimento)
 
@@ -168,5 +238,5 @@ uv run streamlit run main.py
 | Usuário | `postgres` |
 | Senha | `postgres` |
 | Database | `sgh_db` |
-| Porta (host) | `5435` |
+| Porta (host) | `15435` |
 | Porta (rede Docker) | `5432` |
