@@ -1,24 +1,15 @@
--- ==========================================================
--- SISTEMA DE GESTÃO HOSPITALAR
 -- ETAPA 2 - ALTERAÇÕES ESTRUTURAIS
---
+
 -- Este arquivo deve ser executado após:
 -- 1. sql/criacao_tabela.sql
 -- 2. sql/insercao_dados.sql
--- ==========================================================
 
 
--- ==========================================================
 -- 1. UNIDADE EM QUE O ATENDIMENTO FOI REALIZADO
---
--- Necessária para:
--- - calcular o tempo médio de espera por unidade;
--- - gerar estatísticas mensais por unidade.
--- ==========================================================
+-- Necessária para calcular o tempo médio de espera por unidade e gerar estatísticas mensais por unidade.
 
 ALTER TABLE atendimento
 ADD COLUMN id_unidade INT;
-
 
 ALTER TABLE atendimento
 ADD CONSTRAINT fk_atendimento_unidade
@@ -27,9 +18,7 @@ REFERENCES unidade(id_unidade)
 ON UPDATE CASCADE
 ON DELETE RESTRICT;
 
-
--- Adequação dos atendimentos inseridos na Etapa 1.
--- As unidades existentes possuem IDs 1, 2 e 3.
+-- Adequação dos atendimentos inseridos na Etapa 1. As unidades existentes possuem IDs 1, 2 e 3.
 
 UPDATE atendimento
 SET id_unidade = CASE
@@ -38,52 +27,36 @@ SET id_unidade = CASE
     WHEN id_atendimento IN (3, 6, 9) THEN 3
 END;
 
-
--- Garante que todos os atendimentos estejam associados
--- obrigatoriamente a uma unidade.
+-- Garante que todos os atendimentos estejam associados obrigatoriamente a uma unidade.
 
 ALTER TABLE atendimento
 ALTER COLUMN id_unidade SET NOT NULL;
 
 
--- ==========================================================
 -- 2. HORÁRIO DE INÍCIO DO PROCEDIMENTO REALIZADO
---
--- Necessário para calcular o tempo entre a chegada do
--- paciente e o início do primeiro procedimento.
--- ==========================================================
+-- Necessário para calcular o tempo entre a chegada do paciente e o início do primeiro procedimento.
 
 ALTER TABLE procedimento_realizado
 ADD COLUMN data_hora_inicio TIMESTAMP;
 
-
--- Os registros antigos não possuíam horário de início.
--- Para manter os dados válidos, foi definido um horário
--- de teste 15 minutos após o início do atendimento.
+-- Os registros antigos não possuíam horário de início. Para manter os dados válidos, foi definido um horário de teste 15 minutos após o início do atendimento.
 
 UPDATE procedimento_realizado pr
 SET data_hora_inicio = a.data_hora + INTERVAL '15 minutes'
 FROM atendimento a
 WHERE a.id_atendimento = pr.id_atendimento;
 
-
 ALTER TABLE procedimento_realizado
 ALTER COLUMN data_hora_inicio SET NOT NULL;
 
 
--- ==========================================================
 -- 3. MÉDIA REAL DO TEMPO DOS PROCEDIMENTOS
---
--- Essa coluna será atualizada automaticamente pela trigger
--- trg_atualiza_media_procedimentos.
--- ==========================================================
+-- Essa coluna será atualizada automaticamente pela trigger trg_atualiza_media_procedimentos.
 
 ALTER TABLE procedimento
 ADD COLUMN media_tempo_procedimento NUMERIC(10, 2);
 
-
--- Inicializa a média usando os registros já existentes
--- em procedimento_realizado.
+-- Inicializa a média usando os registros já existentes em procedimento_realizado.
 
 UPDATE procedimento p
 SET media_tempo_procedimento = media_procedimento.media_calculada
@@ -100,16 +73,9 @@ FROM (
 WHERE p.id_procedimento = media_procedimento.id_procedimento;
 
 
--- ==========================================================
 -- 4. TABELA DE AUDITORIA DOS ATENDIMENTOS
---
--- Será utilizada pela trigger trg_audita_atendimento para
--- registrar operações de INSERT, UPDATE e DELETE.
---
--- id_atendimento não possui chave estrangeira porque o
--- registro da auditoria deve continuar existindo mesmo
--- depois da exclusão do atendimento original.
--- ==========================================================
+-- Será utilizada pela trigger trg_audita_atendimento para registrar operações de INSERT, UPDATE e DELETE.
+-- id_atendimento não possui chave estrangeira porque o registro da auditoria deve continuar existindo mesmo depois da exclusão do atendimento original.
 
 CREATE TABLE auditoria_atendimento (
     id_auditoria BIGSERIAL,
@@ -130,18 +96,9 @@ CREATE TABLE auditoria_atendimento (
 );
 
 
--- ==========================================================
 -- 5. TABELA DE INTERNAÇÃO
---
--- Necessária para implementar a view
--- vw_pacientes_internados.
---
--- Uma internação permanece ativa enquanto
--- data_hora_saida for NULL.
---
--- O paciente e a unidade podem ser obtidos por meio do
--- atendimento relacionado, evitando repetição de dados.
--- ==========================================================
+-- Necessária para implementar a view vw_pacientes_internados. Uma internação permanece ativa enquanto data_hora_saida for NULL.
+-- O paciente e a unidade podem ser obtidos por meio do atendimento relacionado, evitando repetição de dados.
 
 CREATE TABLE internacao (
     id_internacao SERIAL,
