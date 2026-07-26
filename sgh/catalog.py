@@ -81,9 +81,20 @@ CATALOGO: dict[str, dict[str, dict[str, Any]]] = {
                     "label": "Coluna",
                     "type": "select",
                     "options": ["endereco", "num_convenio"],
+                    "default": "endereco",
                 },
-                {"name": "valor", "label": "Novo valor", "type": "text"},
-                {"name": "id_paciente", "label": "ID do paciente", "type": "int"},
+                {
+                    "name": "valor",
+                    "label": "Novo valor",
+                    "type": "text",
+                    "default": "Rua Nova, 100",
+                },
+                {
+                    "name": "id_paciente",
+                    "label": "ID do paciente",
+                    "type": "int",
+                    "default": 1,
+                },
             ],
             "mutates": True,
             "fn": crud.atualizar_dados_paciente,
@@ -117,9 +128,23 @@ CATALOGO: dict[str, dict[str, dict[str, Any]]] = {
         },
         "Remover procedimento realizado": {
             "description": "Remove procedimento realizado somente se faturado = FALSE.",
+            # Defaults 2 e 2, não 1 e 1: o par (1, 1) do seed tem faturado = TRUE,
+            # então a operação recusa e o usuário vê "nenhuma linha afetada" sem
+            # entender por quê. O par (2, 2) tem faturado = FALSE e demonstra a
+            # remoção de fato.
             "params": [
-                {"name": "id_atendimento", "label": "ID do atendimento", "type": "int"},
-                {"name": "id_procedimento", "label": "ID do procedimento", "type": "int"},
+                {
+                    "name": "id_atendimento",
+                    "label": "ID do atendimento",
+                    "type": "int",
+                    "default": 2,
+                },
+                {
+                    "name": "id_procedimento",
+                    "label": "ID do procedimento",
+                    "type": "int",
+                    "default": 2,
+                },
             ],
             "mutates": True,
             "fn": crud.remover_procedimento_realizado,

@@ -24,7 +24,11 @@ def collect_params(param_defs: list[dict], key_prefix: str = "") -> list:
         param_type = param["type"]
 
         if param_type == "text":
-            values.append(st.text_input(label, key=f"param_{key}"))
+            values.append(
+                st.text_input(
+                    label, value=param.get("default", ""), key=f"param_{key}"
+                )
+            )
         elif param_type == "int":
             # Streamlit number_input devolve float; as funções esperam int.
             values.append(
