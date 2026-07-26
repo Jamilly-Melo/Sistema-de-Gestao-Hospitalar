@@ -12,7 +12,7 @@ comparar listas cruas daria falha intermitente sem bug nenhum.
 
 from datetime import datetime
 
-from tests.conftest import ordenado
+from tests.conftest import ROOT, ordenado
 
 from sgh.queries import analiticas, basicas
 
@@ -60,6 +60,44 @@ def test_plantoes_por_residente_nas_unidades(executar_sql):
         "sql/consultas-analiticas/plantoes_por_residente_nas_unidades.sql"
     )
     assert analiticas.plantoes_por_residente_nas_unidades() == esperado
+
+
+def test_plantoes_mantem_residente_sem_plantao_no_mes(session_revertida):
+    """O caso que o teste de paridade sozinho não alcança.
+
+    `plantoes_por_residente_nas_unidades` põe as condições de data no ON do LEFT
+    JOIN justamente para manter os residentes sem plantão no mês, com unidade
+    nula e total zero. Mas o seed tem as 10 escalas todas no mesmo mês e cobrindo
+    os 5 residentes — então, enquanto a data corrente cair nesse mês, nenhuma
+    linha sai com unidade nula, e mover as condições para o WHERE não faria
+    nenhum teste falhar.
+
+    Aqui o cenário é construído removendo as escalas de um residente e desfeito
+    no rollback da fixture. Os dois lados rodam na MESMA sessão, porque a
+    remoção não está commitada — a fixture `executar_sql` abre sessão própria e
+    não a enxergaria.
+    """
+    from sqlalchemy import delete
+
+    from sgh.models import Escala
+
+    session_revertida.execute(delete(Escala).where(Escala.id_residente == 6))
+    session_revertida.flush()
+
+    atual = analiticas.plantoes_por_residente_nas_unidades(session=session_revertida)
+
+    assert any(
+        linha["unidade"] is None and linha["total_plantoes"] == 0 for linha in atual
+    ), "nenhum residente sem plantão no resultado — o ramo do LEFT JOIN não foi exercitado"
+
+    sql = (
+        ROOT / "sql/consultas-analiticas/plantoes_por_residente_nas_unidades.sql"
+    ).read_text(encoding="utf-8")
+    esperado = [
+        dict(linha)
+        for linha in session_revertida.connection().exec_driver_sql(sql).mappings()
+    ]
+    assert atual == esperado
 
 
 def test_preceptores_que_supervisionaram(executar_sql):
