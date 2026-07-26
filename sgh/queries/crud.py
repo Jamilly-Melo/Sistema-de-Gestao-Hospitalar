@@ -42,6 +42,12 @@ def inserir_atendimento(
     """Insere um atendimento se paciente, residente, preceptor e unidade existirem.
 
     id_unidade é obrigatório desde alteracoes.sql, que tornou a coluna NOT NULL.
+
+    A verificação e o insert são duas operações na mesma transação, e não uma
+    sentença única como o `INSERT ... WHERE EXISTS` do .sql original. Se um dos
+    cadastros for removido por outra transação nesse intervalo, a FK do schema
+    barra a escrita, mas o erro sobe como IntegrityError em vez de virar uma
+    recusa graciosa com []. Aceito: uso acadêmico single-user.
     """
     with sessao(session=session) as s:
         existem = (

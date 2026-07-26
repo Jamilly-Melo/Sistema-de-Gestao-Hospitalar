@@ -9,8 +9,6 @@ commits internos viram savepoints e o rollback do fixture desfaz tudo.
 
 from datetime import datetime
 
-from sqlalchemy import select
-
 from sgh.models import Atendimento, Paciente, Pessoa, ProcedimentoRealizado
 from sgh.queries import crud
 
@@ -74,6 +72,21 @@ def test_atualizar_num_convenio_do_paciente(session_revertida):
     )
     assert resultado == [{"id_pessoa": 1}]
     assert session_revertida.get(Paciente, 1).num_convenio == "C999"
+
+
+def test_atualizar_campo_nao_permitido(session_revertida):
+    """O SQL original resolvia isto com uma CTE, porque não dá para escolher a
+    coluna em tempo de execução. Em Python o despacho é um if, e o guard é o que
+    impede um `campo` arbitrário vindo da UI de virar escrita em coluna
+    inesperada — precisa de teste."""
+    import pytest
+
+    with pytest.raises(ValueError, match="não atualizável"):
+        crud.atualizar_dados_paciente(
+            "grupo_sanguineo", "AB-", 1, session=session_revertida
+        )
+
+    assert session_revertida.get(Paciente, 1).grupo_sanguineo == "A+"
 
 
 def test_atualizar_paciente_inexistente(session_revertida):
