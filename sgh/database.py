@@ -19,12 +19,16 @@ SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 
 @contextmanager
-def sessao(session: Session | None = None) -> Iterator[Session]:
+def sessao(*, session: Session | None = None) -> Iterator[Session]:
     """Usa a sessão recebida ou cria uma própria.
 
     Receber a sessão de fora é o que torna as funções testáveis com rollback e,
     mais adiante, injetáveis por request num FastAPI. Quando a sessão vem de fora,
     quem a criou é responsável por fechá-la.
+
+    `session` é keyword-only aqui e em fetch_all pelo mesmo motivo que nas
+    funções de consulta: um argumento posicional a mais nunca deve acabar
+    interpretado como sessão por acidente.
     """
     if session is not None:
         yield session
@@ -33,7 +37,7 @@ def sessao(session: Session | None = None) -> Iterator[Session]:
             yield propria
 
 
-def fetch_all(stmt, session: Session | None = None) -> list[dict[str, Any]]:
+def fetch_all(stmt, *, session: Session | None = None) -> list[dict[str, Any]]:
     """Executa um select e devolve as linhas como dicionários."""
-    with sessao(session) as s:
+    with sessao(session=session) as s:
         return [dict(linha) for linha in s.execute(stmt).mappings()]
