@@ -60,7 +60,9 @@ class Paciente(Base):
     alergias: Mapped[list["PacienteAlergia"]] = relationship(
         back_populates="paciente", passive_deletes=True
     )
-    # `atendimentos` é acrescentado na Task 3, quando Atendimento existir.
+    atendimentos: Mapped[list["Atendimento"]] = relationship(
+        back_populates="paciente"
+    )
 
     __table_args__ = (
         CheckConstraint(
@@ -83,7 +85,7 @@ class PacienteAlergia(Base):
     )
 
     paciente: Mapped["Paciente"] = relationship(back_populates="alergias")
-    # `alergia` é acrescentado na Task 3, quando Alergia existir.
+    alergia: Mapped["Alergia"] = relationship(back_populates="pacientes")
 
 
 class Profissional(Base):
