@@ -14,7 +14,10 @@ services:
       start_period: 10s
       timeout: 5s
     ports:
-      - "5435:5432"
+      # 15435 e nao 5435: o Windows reserva dinamicamente a faixa 5358-5457
+      # (netsh int ipv4 show excludedportrange), e o bind na 5435 falha com
+      # "socket access forbidden". A porta interna do container segue 5432.
+      - "15435:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

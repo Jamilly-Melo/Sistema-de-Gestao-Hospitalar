@@ -2,7 +2,7 @@
 
 Os defaults são os do docker-compose, onde o frontend fala com o Postgres pelo
 hostname `database` na porta interna 5432. Para rodar fora do container, exporte
-DB_HOST=localhost e DB_PORT=5435 (a porta publicada no host).
+DB_HOST=localhost e DB_PORT=15435 (a porta publicada no host).
 """
 
 import os
