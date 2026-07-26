@@ -1,11 +1,7 @@
--- ==========================================================
--- SISTEMA DE GESTÃO HOSPITALAR
 -- ETAPA 2 - TRIGGERS
--- ==========================================================
 
--- ==========================================================
+
 -- 1. IMPEDIR SOBREPOSIÇÃO DE ESCALAS
--- ==========================================================
 
 CREATE OR REPLACE FUNCTION fn_check_sobreposicao_escala()
 RETURNS TRIGGER
@@ -33,7 +29,6 @@ BEGIN
 END;
 $$;
 
-
 CREATE TRIGGER trg_check_sobreposicao_escala
 BEFORE INSERT OR UPDATE
 ON escala
@@ -41,11 +36,7 @@ FOR EACH ROW
 EXECUTE FUNCTION fn_check_sobreposicao_escala();
 
 
-
-
--- ==========================================================
 -- 2. AUDITORIA DE ATENDIMENTOS
--- ==========================================================
 
 CREATE OR REPLACE FUNCTION fn_audita_atendimento()
 RETURNS TRIGGER
@@ -116,7 +107,6 @@ BEGIN
 END;
 $$;
 
-
 CREATE TRIGGER trg_audita_atendimento
 AFTER INSERT OR UPDATE OR DELETE
 ON atendimento
@@ -124,11 +114,7 @@ FOR EACH ROW
 EXECUTE FUNCTION fn_audita_atendimento();
 
 
-
-
--- ==========================================================
 -- 3. ATUALIZA MÉDIA DOS PROCEDIMENTOS
--- ==========================================================
 
 CREATE OR REPLACE FUNCTION fn_atualiza_media_procedimentos()
 RETURNS TRIGGER
@@ -157,7 +143,6 @@ BEGIN
 
 END;
 $$;
-
 
 CREATE TRIGGER trg_atualiza_media_procedimentos
 AFTER INSERT
