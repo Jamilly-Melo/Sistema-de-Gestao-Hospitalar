@@ -1,18 +1,8 @@
--- ==========================================================
--- SISTEMA DE GESTÃO HOSPITALAR
 -- ETAPA 2 - STORED PROCEDURES
--- ==========================================================
 
-
--- ==========================================================
 -- 1. REGISTRAR ATENDIMENTO COMPLETO
---
--- Recebe os dados do atendimento e uma lista JSONB de
--- procedimentos realizados.
---
--- Caso qualquer inserção falhe, o CALL inteiro falha e a
--- transação executada pela aplicação deve ser revertida.
--- ==========================================================
+-- Recebe os dados do atendimento e uma lista JSONB de procedimentos realizados.
+-- Caso qualquer inserção falhe, o CALL inteiro falha e a transação executada pela aplicação deve ser revertida.
 
 CREATE OR REPLACE PROCEDURE sp_registrar_atendimento_completo(
     IN p_data_hora TIMESTAMP,
@@ -128,19 +118,13 @@ END;
 $$;
 
 
--- ==========================================================
 -- 2. CALCULAR TEMPO MÉDIO DE ESPERA
---
--- Uma procedure não retorna diretamente um conjunto de
--- linhas no PostgreSQL. Por isso, utiliza um REFCURSOR.
---
+-- Uma procedure não retorna diretamente um conjunto de linhas no PostgreSQL. Por isso, utiliza um REFCURSOR.
 -- A chamada deve ocorrer dentro de uma transação:
---
 -- BEGIN;
 -- CALL sp_calcular_tempo_medio_espera('resultado_espera');
 -- FETCH ALL FROM resultado_espera;
 -- COMMIT;
--- ==========================================================
 
 CREATE OR REPLACE PROCEDURE sp_calcular_tempo_medio_espera(
     INOUT p_resultado REFCURSOR
@@ -176,15 +160,9 @@ END;
 $$;
 
 
--- ==========================================================
 -- 3. REAJUSTAR ESCALA
---
--- Move as escalas de um residente de uma data e turno de
--- origem para uma nova data e turno.
---
--- A operação é cancelada se o residente já possuir qualquer
--- escala na data e turno de destino.
--- ==========================================================
+-- Move as escalas de um residente de uma data e turno de origem para uma nova data e turno.
+-- A operação é cancelada se o residente já possuir qualquer escala na data e turno de destino.
 
 CREATE OR REPLACE PROCEDURE sp_reajustar_escala(
     IN p_id_residente INT,
