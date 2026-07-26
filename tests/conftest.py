@@ -19,10 +19,16 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def ordenado(linhas: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Ordem canônica para comparar resultados.
+    """Ordem canônica para comparar resultados de consultas SEM ORDER BY.
 
-    Várias consultas do projeto não têm ORDER BY, então a ordem das linhas é
-    indefinida e comparar listas diretamente daria falso negativo.
+    Use com parcimônia: seis das sete consultas de leitura têm ORDER BY, e para
+    essas a comparação deve ser na ordem retornada — a ordenação é parte do que
+    o teste de paridade precisa verificar. Aplicar isto ali faria o teste aceitar
+    uma direção trocada ou um ORDER BY removido sem reclamar.
+
+    O caso legítimo é `media_atendimentos_por_residente`, a única consulta sem
+    ORDER BY, onde a ordem das linhas é indefinida e comparar listas cruas daria
+    falha intermitente sem bug nenhum.
     """
     return sorted(linhas, key=lambda linha: [str(valor) for valor in linha.values()])
 
