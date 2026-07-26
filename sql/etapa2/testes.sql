@@ -1,7 +1,4 @@
--- ==========================================================
--- SISTEMA DE GESTÃO HOSPITALAR
 -- ETAPA 2 - TESTES
---
 -- Executar depois de:
 -- 1. criacao_tabela.sql
 -- 2. insercao_dados.sql
@@ -9,16 +6,13 @@
 -- 4. procedures.sql
 -- 5. triggers.sql
 -- 6. views.sql
---
+
 -- Este arquivo modifica os dados. Para repetir todos os
 -- testes, recrie o banco antes de executá-lo novamente.
--- ==========================================================
 
 
--- ==========================================================
 -- TESTE 1
 -- sp_registrar_atendimento_completo
--- ==========================================================
 
 CALL sp_registrar_atendimento_completo(
     '2026-08-01 08:00:00',
@@ -47,7 +41,6 @@ CALL sp_registrar_atendimento_completo(
     ]'::JSONB
 );
 
-
 -- Verifica o atendimento criado.
 
 SELECT
@@ -61,7 +54,6 @@ SELECT
 FROM atendimento
 ORDER BY id_atendimento DESC
 LIMIT 1;
-
 
 -- Verifica os procedimentos do atendimento mais recente.
 
@@ -83,13 +75,10 @@ WHERE pr.id_atendimento = (
 ORDER BY pr.id_procedimento;
 
 
--- ==========================================================
 -- TESTE 2
 -- Rollback da procedure quando um procedimento é inválido
---
 -- O erro é capturado para que o restante do arquivo continue.
 -- O atendimento não deve permanecer no banco.
--- ==========================================================
 
 DO $$
 DECLARE
@@ -142,10 +131,8 @@ END;
 $$;
 
 
--- ==========================================================
 -- TESTE 3
 -- sp_reajustar_escala
--- ==========================================================
 
 CALL sp_reajustar_escala(
     6,
@@ -168,12 +155,9 @@ WHERE id_residente = 6
 ORDER BY data_plantao, turno;
 
 
--- ==========================================================
 -- TESTE 4
 -- sp_calcular_tempo_medio_espera
---
 -- O REFCURSOR precisa ser utilizado dentro de uma transação.
--- ==========================================================
 
 BEGIN;
 
@@ -186,13 +170,10 @@ FETCH ALL FROM resultado_tempo_espera;
 COMMIT;
 
 
--- ==========================================================
 -- TESTE 5
 -- trg_check_sobreposicao_escala
---
 -- Tenta inserir o residente 6 no mesmo dia e turno em outra
 -- unidade. A trigger deve impedir a inserção.
--- ==========================================================
 
 DO $$
 BEGIN
@@ -231,8 +212,7 @@ END;
 $$;
 
 
--- Confirma que existe somente uma escala do residente
--- nessa data e turno.
+-- Confirma que existe somente uma escala do residente nessa data e turno.
 
 SELECT
     COUNT(*) AS quantidade_escalas
@@ -242,10 +222,8 @@ WHERE id_residente = 6
   AND turno = 'MANHA';
 
 
--- ==========================================================
 -- TESTE 6
 -- trg_audita_atendimento
--- ==========================================================
 
 UPDATE atendimento
 SET duracao_minutos = 50
@@ -264,13 +242,9 @@ FROM auditoria_atendimento
 ORDER BY id_auditoria;
 
 
--- ==========================================================
 -- TESTE 7
 -- trg_atualiza_media_procedimentos
---
--- A combinação atendimento 1 + procedimento 1 já existe.
--- Por isso, o teste utiliza o procedimento 2.
--- ==========================================================
+-- A combinação atendimento 1 + procedimento 1 já existe. Por isso, o teste utiliza o procedimento 2.
 
 INSERT INTO procedimento_realizado (
     id_atendimento,
@@ -299,15 +273,12 @@ SELECT
 FROM procedimento
 WHERE id_procedimento = 2;
 
-
 -- O procedimento 2 possuía tempo real de 35 minutos.
 -- Depois da inserção de 18 minutos, a média esperada é 26,50.
 
 
--- ==========================================================
 -- TESTE 8
 -- Dados necessários para vw_pacientes_internados
--- ==========================================================
 
 INSERT INTO internacao (
     id_atendimento,
@@ -327,10 +298,8 @@ VALUES
     );
 
 
--- ==========================================================
 -- TESTE 9
 -- Views
--- ==========================================================
 
 SELECT *
 FROM vw_pacientes_internados
