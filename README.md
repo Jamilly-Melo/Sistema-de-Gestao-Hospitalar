@@ -128,7 +128,7 @@ Serviços:
 | Serviço | Função | Porta no host |
 |---------|--------|---------------|
 | `database` | PostgreSQL | `15435` → `5432` |
-| `db-init` | Aplica `criacao_tabela.sql` + `insercao_dados.sql` | — (one-shot) |
+| `db-init` | Aplica etapa 1 (`criacao_tabela` + `insercao_dados`) e etapa 2 (`alteracoes`, `procedures`, `triggers`, `views`), com `ON_ERROR_STOP=1` | — (one-shot) |
 | `frontend` | Streamlit | `8501` |
 
 Acesse a interface em [http://localhost:8501](http://localhost:8501).
@@ -212,7 +212,7 @@ as sessões é por tempo. Concorrência não é coberta pela suíte de testes.
    ```
 
 3. **Parâmetros SQL**  
-   Placeholders são `%s` (psycopg2). Nomes de coluna **não** podem ser passados como `%s` com segurança; em `atualizar_dados_paciente.sql` o parâmetro `campo` escolhe entre valores permitidos (`endereco` | `num_convenio`) via CTE.
+   Isto descreve os arquivos `.sql` em `sql/crud/` (fonte do schema e material da entrega), não a aplicação — que roda a versão equivalente em `sgh/queries/` via SQLAlchemy, sem `cursor.execute`. Nesses arquivos, placeholders são `%s` (psycopg2). Nomes de coluna **não** podem ser passados como `%s` com segurança; em `atualizar_dados_paciente.sql` o parâmetro `campo` escolhe entre valores permitidos (`endereco` | `num_convenio`) via CTE.
 
 4. **Integridade no CRUD**  
    - Inserção de atendimento só ocorre se paciente, residente, preceptor e unidade existirem (`INSERT ... SELECT ... WHERE EXISTS`).  
