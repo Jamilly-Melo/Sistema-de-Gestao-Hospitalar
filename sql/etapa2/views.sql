@@ -1,15 +1,7 @@
--- ==========================================================
--- SISTEMA DE GESTÃO HOSPITALAR
 -- ETAPA 2 - VIEWS
--- ==========================================================
 
-
--- ==========================================================
 -- 1. PACIENTES ATUALMENTE INTERNADOS
---
--- Considera somente a internação mais recente de cada
--- paciente e retorna aqueles cuja data_hora_saida é NULL.
--- ==========================================================
+-- Considera somente a internação mais recente de cada paciente e retorna aqueles cuja data_hora_saida é NULL.
 
 CREATE OR REPLACE VIEW vw_pacientes_internados AS
 WITH internacoes_ordenadas AS (
@@ -46,17 +38,9 @@ WHERE io.ordem = 1
   AND io.data_hora_saida IS NULL;
 
 
--- ==========================================================
 -- 2. RESIDENTES SEM SUPERVISOR ADEQUADO
---
--- Exibe residentes escalados cujo preceptor não possui
--- titulação de DOUTOR ou POS_DOUTOR.
---
--- Como a modelagem atual associa um preceptor diretamente
--- a cada escala, não há registro de "supervisão ativa"
--- separado. Portanto, a view usa a titulação do preceptor
--- vinculado ao plantão.
--- ==========================================================
+-- Exibe residentes escalados cujo preceptor não possui titulação de DOUTOR ou POS_DOUTOR.
+-- Como a modelagem atual associa um preceptor diretamente a cada escala, não há registro de "supervisão ativa" separado. Assim, a view usa a titulação do preceptor vinculado ao plantão.
 
 CREATE OR REPLACE VIEW vw_residentes_sem_supervisor AS
 SELECT
@@ -84,15 +68,12 @@ JOIN pessoa pp
 WHERE pc.titulacao NOT IN ('DOUTOR', 'POS_DOUTOR');
 
 
--- ==========================================================
 -- 3. ESTATÍSTICAS MENSAIS DE ATENDIMENTOS
---
 -- Exibe, por mês e por unidade:
 -- - total de atendimentos;
 -- - média de duração;
 -- - procedimento mais comum;
 -- - quantidade do procedimento mais comum.
--- ==========================================================
 
 CREATE OR REPLACE VIEW vw_estatisticas_atendimentos_mensal AS
 WITH estatisticas_atendimento AS (
