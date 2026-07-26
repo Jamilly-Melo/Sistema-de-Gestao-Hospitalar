@@ -194,6 +194,25 @@ as sessões é por tempo. Concorrência não é coberta pela suíte de testes.
 > A sessão 2 leva cerca de 10 segundos e termina logo após o `COMMIT` da sessão 1
 > — esse é o tempo em que ela ficou bloqueada no `SELECT ... FOR UPDATE`.
 
+> **Repetindo a demonstração:** `docker compose down -v` não remove os
+> containers dos profiles `teste` e `concorrencia-sql` — o Compose só age
+> sobre profiles nomeados explicitamente. Se sobrar um container do
+> `concorrencia-sql` de uma execução anterior apontando para uma rede que já
+> foi removida, a próxima subida falha com
+> `failed to set up container networking: network ... not found`. Isso é
+> resíduo, não um problema da demonstração em si; limpe antes com:
+>
+> ```powershell
+> docker compose --profile teste --profile concorrencia-sql down -v --remove-orphans
+> ```
+>
+> Além disso, a sessão 1 faz `COMMIT` de uma escala real em `2026-09-01`. Numa
+> segunda execução sem recriar o banco (só remover os containers não basta),
+> essa mesma inserção já existe e a sessão 1 é rejeitada pela trigger — a
+> demonstração passa a mostrar outra coisa. Para repetir de verdade, recrie o
+> banco (`docker compose down -v` remove o volume `postgres_data`; `db-init`
+> recarrega o schema na próxima subida).
+
 ## Principais considerações
 
 1. **Host/porta dentro vs fora do container**  
