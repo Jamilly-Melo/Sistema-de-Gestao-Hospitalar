@@ -11,6 +11,7 @@ from datetime import datetime
 
 from sgh.models import Atendimento, Paciente, Pessoa, ProcedimentoRealizado
 from sgh.queries import crud
+from tests.conftest import ROOT
 
 
 def test_inserir_atendimento_com_ids_validos(session_revertida):
@@ -114,4 +115,44 @@ def test_remover_procedimento_inexistente(session_revertida):
     resultado = crud.remover_procedimento_realizado(
         999, 999, session=session_revertida
     )
+    assert resultado == []
+
+
+def test_sql_inserir_atendimento_com_ids_validos(session_revertida):
+    """Exercita sql/crud/inserir_atendimento.sql diretamente — nenhum outro
+    teste executa o arquivo, e o parâmetro id_unidade que ele ganhou numa task
+    anterior nunca tinha rodado de fato. exec_driver_sql porque o arquivo usa
+    placeholders %s do psycopg2, não :nome."""
+    sql = (ROOT / "sql/crud/inserir_atendimento.sql").read_text(encoding="utf-8")
+    params = (datetime(2026, 8, 1, 8, 0), 45, 1, 6, 11, 1)
+    resultado = [
+        dict(linha)
+        for linha in session_revertida.connection()
+        .exec_driver_sql(sql, params)
+        .mappings()
+    ]
+
+    assert len(resultado) == 1
+    linha = resultado[0]
+    assert linha["id_paciente"] == 1
+    assert linha["id_residente"] == 6
+    assert linha["id_preceptor"] == 11
+    assert linha["id_unidade"] == 1
+    assert linha["duracao_minutos"] == 45
+    assert linha["data_hora"] == datetime(2026, 8, 1, 8, 0)
+    assert linha["id_atendimento"] is not None
+
+
+def test_sql_inserir_atendimento_recusa_unidade_inexistente(session_revertida):
+    """Prova que o EXISTS de unidade acrescentado ao .sql funciona: id_unidade
+    inexistente não insere nada e devolve zero linhas."""
+    sql = (ROOT / "sql/crud/inserir_atendimento.sql").read_text(encoding="utf-8")
+    params = (datetime(2026, 8, 1, 8, 0), 45, 1, 6, 11, 999)
+    resultado = [
+        dict(linha)
+        for linha in session_revertida.connection()
+        .exec_driver_sql(sql, params)
+        .mappings()
+    ]
+
     assert resultado == []

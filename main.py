@@ -43,8 +43,13 @@ def collect_params(param_defs: list[dict], key_prefix: str = "") -> list:
                 )
             )
         elif param_type == "select":
+            options = param["options"]
+            default = param.get("default")
+            index = options.index(default) if default in options else 0
             values.append(
-                st.selectbox(label, options=param["options"], key=f"param_{key}")
+                st.selectbox(
+                    label, options=options, index=index, key=f"param_{key}"
+                )
             )
         elif param_type == "datetime":
             default = param.get("default", datetime.now())

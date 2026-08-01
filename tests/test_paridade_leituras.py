@@ -100,6 +100,185 @@ def test_plantoes_mantem_residente_sem_plantao_no_mes(session_revertida):
     assert atual == esperado
 
 
+def test_ranking_residentes_com_residente_sem_atendimento(session_revertida):
+    """O seed empata todos os residentes em 2 atendimentos, então nem o LEFT
+    JOIN nem o DESC de ranking_residentes têm poder de detecção sozinhos:
+    trocar outerjoin por join, ou desc por asc, não muda nada. Apagar os
+    atendimentos do residente 6 zera o total dele mantendo os demais em 2,
+    o que cobre as duas coisas de uma vez: a linha do LEFT JOIN aparece e os
+    agregados deixam de ser todos iguais.
+    """
+    from sqlalchemy import delete
+
+    from sgh.models import Atendimento
+
+    session_revertida.execute(
+        delete(Atendimento).where(Atendimento.id_residente == 6)
+    )
+    session_revertida.flush()
+
+    atual = analiticas.ranking_residentes(session=session_revertida)
+
+    assert any(
+        linha["total_atendimentos"] == 0 for linha in atual
+    ), "nenhum residente com total 0 — o ramo do LEFT JOIN não foi exercitado"
+
+    sql = (ROOT / "sql/consultas-analiticas/ranking_residentes.sql").read_text(
+        encoding="utf-8"
+    )
+    esperado = [
+        dict(linha)
+        for linha in session_revertida.connection().exec_driver_sql(sql).mappings()
+    ]
+    assert atual == esperado
+
+
+def test_media_atendimentos_por_residente_com_residente_sem_atendimento(
+    session_revertida,
+):
+    """Mesmo raciocínio de ranking_residentes, aplicado a
+    media_atendimentos_por_residente: sem um residente zerado, outerjoin vira
+    join sem quebrar nenhum teste. Sem ORDER BY no .sql, compara via
+    `ordenado`."""
+    from sqlalchemy import delete
+
+    from sgh.models import Atendimento
+
+    session_revertida.execute(
+        delete(Atendimento).where(Atendimento.id_residente == 6)
+    )
+    session_revertida.flush()
+
+    atual = basicas.media_atendimentos_por_residente(session=session_revertida)
+
+    assert any(
+        linha["tempo_medio_de_atendimentos"] is None for linha in atual
+    ), "nenhum residente sem atendimento no resultado — o ramo do LEFT JOIN não foi exercitado"
+
+    sql = (
+        ROOT / "sql/consultas-basicas/media_atendimentos_por_residente.sql"
+    ).read_text(encoding="utf-8")
+    esperado = [
+        dict(linha)
+        for linha in session_revertida.connection().exec_driver_sql(sql).mappings()
+    ]
+    assert ordenado(atual) == ordenado(esperado)
+
+
+def test_atendimentos_do_paciente_com_paciente_sem_atendimento(session_revertida):
+    """O seed nunca deixa um paciente sem atendimento, então outerjoin virar
+    join não quebra o teste de paridade. Apagar os atendimentos do paciente 1
+    cria esse cenário dentro do rollback da fixture."""
+    from sqlalchemy import delete
+
+    from sgh.models import Atendimento
+
+    session_revertida.execute(delete(Atendimento).where(Atendimento.id_paciente == 1))
+    session_revertida.flush()
+
+    atual = basicas.atendimentos_do_paciente(session=session_revertida)
+
+    assert any(
+        linha["data_hora"] is None for linha in atual
+    ), "nenhum paciente sem atendimento no resultado — o ramo do LEFT JOIN não foi exercitado"
+
+    sql = (ROOT / "sql/consultas-basicas/atendimentos_do_paciente.sql").read_text(
+        encoding="utf-8"
+    )
+    esperado = [
+        dict(linha)
+        for linha in session_revertida.connection().exec_driver_sql(sql).mappings()
+    ]
+    assert atual == esperado
+
+
+def test_plantoes_por_residente_nas_unidades_desc_com_totais_distintos(
+    session_revertida,
+):
+    """`test_plantoes_mantem_residente_sem_plantao_no_mes` cobre o NULLS LAST e
+    o ramo do LEFT JOIN, mas não dá poder de detecção ao `desc(total_plantoes)`
+    em si: a linha do residente sem plantão tem unidade nula, que já vai por
+    último por causa do NULLS LAST, então o total dela nunca é comparado
+    contra o de outra linha da mesma unidade. No seed, todo grupo
+    (unidade, residente) empata em 2 plantões. Um plantão extra para o
+    residente 6 na unidade 1 rompe esse empate dentro do mesmo grupo de
+    unidade, dando ao DESC algo de fato para ordenar."""
+    from datetime import date
+
+    from sgh.models import Escala
+
+    session_revertida.add(
+        Escala(
+            data_plantao=date(2026, 7, 15),
+            turno="TARDE",
+            id_unidade=1,
+            id_residente=6,
+            id_preceptor=11,
+        )
+    )
+    session_revertida.flush()
+
+    atual = analiticas.plantoes_por_residente_nas_unidades(session=session_revertida)
+
+    totais = {linha["total_plantoes"] for linha in atual}
+    assert len(totais) >= 2, "totais de plantão continuam todos iguais — DESC não tem o que ordenar"
+
+    sql = (
+        ROOT / "sql/consultas-analiticas/plantoes_por_residente_nas_unidades.sql"
+    ).read_text(encoding="utf-8")
+    esperado = [
+        dict(linha)
+        for linha in session_revertida.connection().exec_driver_sql(sql).mappings()
+    ]
+    assert atual == esperado
+
+
+def test_preceptores_que_supervisionaram_desc_com_totais_distintos(session_revertida):
+    """O seed só faz o preceptor 11 passar do corte de 5 na janela de
+    julho/2026 — nenhuma segunda linha existe para o `desc(total_atendimentos)`
+    ordenar contra. Insere atendimentos extras para o preceptor 12 dentro do
+    rollback, dando a ele um total diferente do preceptor 11 e também acima
+    de 5."""
+    from datetime import datetime
+
+    from sgh.models import Atendimento
+
+    novos = [
+        Atendimento(
+            data_hora=datetime(2026, 7, 20, 8 + i, 0),
+            duracao_minutos=30,
+            id_paciente=(i % 5) + 1,
+            id_residente=7,
+            id_preceptor=12,
+            id_unidade=2,
+        )
+        for i in range(7)
+    ]
+    session_revertida.add_all(novos)
+    session_revertida.flush()
+
+    inicio = datetime(2026, 7, 1)
+    fim = datetime(2026, 8, 1)
+    atual = analiticas.preceptores_que_supervisionaram(
+        inicio, fim, session=session_revertida
+    )
+
+    totais = {linha["total_atendimentos"] for linha in atual}
+    assert len(totais) >= 2, "totais continuam iguais — DESC não tem o que ordenar"
+
+    sql = (
+        ROOT / "sql/consultas-analiticas/preceptores_que_supervisionaram.sql"
+    ).read_text(encoding="utf-8")
+    esperado = [
+        dict(linha)
+        for linha in session_revertida.connection()
+        .exec_driver_sql(sql, (inicio, fim))
+        .mappings()
+    ]
+    assert esperado, "preceptor 12 deveria passar do corte de 5"
+    assert atual == esperado
+
+
 def test_preceptores_que_supervisionaram(executar_sql):
     """O seed põe 6 atendimentos do preceptor 11 em julho de 2026, acima do
     corte de 5 do HAVING — a janela abaixo garante linhas na saída.
