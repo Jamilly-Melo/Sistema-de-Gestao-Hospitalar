@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sgh.queries import analiticas, basicas, crud
+from sgh.queries import analiticas, basicas, crud, etapa2
 
 CATALOGO: dict[str, dict[str, dict[str, Any]]] = {
     "Consultas básicas": {
@@ -150,4 +150,48 @@ CATALOGO: dict[str, dict[str, dict[str, Any]]] = {
             "fn": crud.remover_procedimento_realizado,
         },
     },
+    "Etapa 2": {
+        "Pacientes internados": {
+            "description": "Pacientes atualmente internados (sem alta), com unidade.",
+            "params": [],
+            "mutates": False,
+            "fn": etapa2.pacientes_internados,
+        },
+        "Residentes sem supervisor adequado": {
+            "description": (
+                "Residentes escalados cujo preceptor não tem titulação de "
+                "doutor ou pós-doutor."
+            ),
+            "params": [],
+            "mutates": False,
+            "fn": etapa2.residentes_sem_supervisor,
+        },
+        "Estatísticas mensais de atendimentos": {
+            "description": (
+                "Total de atendimentos, duração média e procedimento mais "
+                "comum, por mês e unidade."
+            ),
+            "params": [],
+            "mutates": False,
+            "fn": etapa2.estatisticas_atendimentos_mensal,
+        },
+        "Tempo médio de espera": {
+            "description": (
+                "Tempo médio entre a chegada do paciente e o início do "
+                "primeiro procedimento, por unidade."
+            ),
+            "params": [],
+            "mutates": False,
+            "fn": etapa2.tempo_medio_espera,
+        },
+    },
 }
+
+CATEGORIAS_RELATORIO: tuple[str, ...] = ("Consultas analíticas", "Etapa 2")
+"""Categorias do CATALOGO expostas via /relatorios na API.
+
+"Consultas básicas" e "CRUD" ficam de fora: as básicas são consumidas
+diretamente pelas rotas de recurso (Paciente, Atendimento, Profissional), e o
+CRUD virou mutação de recurso dedicada — nenhum dos dois passa pelo executor
+genérico de relatórios.
+"""

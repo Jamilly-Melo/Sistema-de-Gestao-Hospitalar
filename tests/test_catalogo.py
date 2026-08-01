@@ -15,8 +15,8 @@ ENTRADAS = [
 ]
 
 
-def test_catalogo_tem_as_dez_entradas():
-    assert len(ENTRADAS) == 10
+def test_catalogo_tem_as_catorze_entradas():
+    assert len(ENTRADAS) == 14
 
 
 @pytest.mark.parametrize("categoria,nome,entrada", ENTRADAS)
@@ -69,3 +69,11 @@ def test_operacoes_de_escrita_executam(session_revertida):
             f"catálogo — os defaults não satisfazem as pré-condições."
         )
         assert all(isinstance(linha, dict) for linha in resultado)
+
+
+def test_categorias_relatorio_existem_no_catalogo():
+    from sgh.catalog import CATALOGO, CATEGORIAS_RELATORIO
+
+    assert CATEGORIAS_RELATORIO == ("Consultas analíticas", "Etapa 2")
+    for categoria in CATEGORIAS_RELATORIO:
+        assert categoria in CATALOGO
