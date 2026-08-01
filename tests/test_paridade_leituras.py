@@ -12,9 +12,27 @@ comparar listas cruas daria falha intermitente sem bug nenhum.
 
 from datetime import datetime
 
+from sqlalchemy import func, select
+
 from tests.conftest import ROOT, ordenado
 
 from sgh.queries import analiticas, basicas
+
+
+def _dia_do_mes_corrente(session, dia: int):
+    """Um dia do mês corrente, segundo o relógio do banco.
+
+    `plantoes_por_residente_nas_unidades` filtra por
+    `DATE_TRUNC('month', CURRENT_DATE)`, então um cenário montado com data fixa
+    só vale enquanto o calendário não virar — foi exatamente assim que os testes
+    de plantão quebraram na passagem de julho para agosto de 2026.
+
+    A data vem de `CURRENT_DATE` e não de `date.today()` porque o container do
+    Postgres roda em UTC: na virada do mês os dois podem discordar, e quem decide
+    o que a consulta enxerga é o banco.
+    """
+    hoje = session.execute(select(func.current_date())).scalar()
+    return hoje.replace(day=dia)
 
 
 def test_atendimentos_do_paciente(executar_sql):
@@ -72,15 +90,39 @@ def test_plantoes_mantem_residente_sem_plantao_no_mes(session_revertida):
     linha sai com unidade nula, e mover as condições para o WHERE não faria
     nenhum teste falhar.
 
-    Aqui o cenário é construído removendo as escalas de um residente e desfeito
-    no rollback da fixture. Os dois lados rodam na MESMA sessão, porque a
-    remoção não está commitada — a fixture `executar_sql` abre sessão própria e
-    não a enxergaria.
+    O cenário é construído por inteiro no mês corrente e desfeito no rollback da
+    fixture: dar plantão a quatro dos cinco residentes e deixar o sexto de fora é
+    o que faz a linha nula existir *por causa* do outer join. Não basta apagar as
+    escalas de um residente e confiar no seed para os demais — o seed está fixo em
+    julho/2026 e, fora daquele mês, ninguém tem plantão, então a linha nula
+    apareceria de qualquer jeito e o teste passaria sem verificar nada.
+
+    Os dois lados rodam na MESMA sessão, porque as mutações não estão commitadas
+    — a fixture `executar_sql` abre sessão própria e não as enxergaria.
     """
     from sqlalchemy import delete
 
     from sgh.models import Escala
 
+    dia = _dia_do_mes_corrente(session_revertida, 20)
+
+    # Zera o mês corrente para o cenário não depender do que o seed trouxe.
+    session_revertida.execute(
+        delete(Escala).where(
+            Escala.data_plantao >= dia.replace(day=1),
+        )
+    )
+    # Todos ganham plantão no mês corrente, menos o residente 6.
+    for id_residente in (7, 8, 9, 10):
+        session_revertida.add(
+            Escala(
+                data_plantao=dia,
+                turno="TARDE",
+                id_unidade=1,
+                id_residente=id_residente,
+                id_preceptor=11,
+            )
+        )
     session_revertida.execute(delete(Escala).where(Escala.id_residente == 6))
     session_revertida.flush()
 
@@ -89,6 +131,9 @@ def test_plantoes_mantem_residente_sem_plantao_no_mes(session_revertida):
     assert any(
         linha["unidade"] is None and linha["total_plantoes"] == 0 for linha in atual
     ), "nenhum residente sem plantão no resultado — o ramo do LEFT JOIN não foi exercitado"
+    assert any(
+        linha["total_plantoes"] > 0 for linha in atual
+    ), "ninguém com plantão no mês corrente — a linha nula apareceria mesmo sem o outer join"
 
     sql = (
         ROOT / "sql/consultas-analiticas/plantoes_por_residente_nas_unidades.sql"
@@ -198,30 +243,44 @@ def test_plantoes_por_residente_nas_unidades_desc_com_totais_distintos(
     """`test_plantoes_mantem_residente_sem_plantao_no_mes` cobre o NULLS LAST e
     o ramo do LEFT JOIN, mas não dá poder de detecção ao `desc(total_plantoes)`
     em si: a linha do residente sem plantão tem unidade nula, que já vai por
-    último por causa do NULLS LAST, então o total dela nunca é comparado
-    contra o de outra linha da mesma unidade. No seed, todo grupo
-    (unidade, residente) empata em 2 plantões. Um plantão extra para o
-    residente 6 na unidade 1 rompe esse empate dentro do mesmo grupo de
-    unidade, dando ao DESC algo de fato para ordenar."""
-    from datetime import date
+    último por causa do NULLS LAST, então o total dela nunca é comparado contra
+    o de outra linha da mesma unidade.
+
+    O que dá poder ao DESC é haver duas linhas **da mesma unidade** com totais
+    diferentes — é só aí que ele decide alguma coisa. O cenário é montado no mês
+    corrente: o residente 6 recebe dois plantões na unidade 1 e o residente 7
+    recebe um. Datas fixas não servem, porque a consulta filtra pelo mês
+    corrente."""
+    from sqlalchemy import delete
 
     from sgh.models import Escala
 
-    session_revertida.add(
-        Escala(
-            data_plantao=date(2026, 7, 15),
-            turno="TARDE",
-            id_unidade=1,
-            id_residente=6,
-            id_preceptor=11,
-        )
+    primeiro = _dia_do_mes_corrente(session_revertida, 1)
+
+    session_revertida.execute(
+        delete(Escala).where(Escala.data_plantao >= primeiro)
     )
+    for dia, id_residente in ((20, 6), (21, 6), (22, 7)):
+        session_revertida.add(
+            Escala(
+                data_plantao=primeiro.replace(day=dia),
+                turno="TARDE",
+                id_unidade=1,
+                id_residente=id_residente,
+                id_preceptor=11,
+            )
+        )
     session_revertida.flush()
 
     atual = analiticas.plantoes_por_residente_nas_unidades(session=session_revertida)
 
-    totais = {linha["total_plantoes"] for linha in atual}
-    assert len(totais) >= 2, "totais de plantão continuam todos iguais — DESC não tem o que ordenar"
+    por_unidade: dict = {}
+    for linha in atual:
+        por_unidade.setdefault(linha["unidade"], set()).add(linha["total_plantoes"])
+    assert any(
+        unidade is not None and len(totais) >= 2
+        for unidade, totais in por_unidade.items()
+    ), "nenhuma unidade com totais diferentes — DESC não tem o que ordenar"
 
     sql = (
         ROOT / "sql/consultas-analiticas/plantoes_por_residente_nas_unidades.sql"
