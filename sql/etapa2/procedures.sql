@@ -11,7 +11,8 @@ CREATE OR REPLACE PROCEDURE sp_registrar_atendimento_completo(
     IN p_id_residente INT,
     IN p_id_preceptor INT,
     IN p_id_unidade INT,
-    IN p_procedimentos JSONB
+    IN p_procedimentos JSONB,
+    INOUT p_id_atendimento INT DEFAULT NULL
 )
 LANGUAGE plpgsql
 AS $$
@@ -110,6 +111,8 @@ BEGIN
             v_data_hora_inicio
         );
     END LOOP;
+
+    p_id_atendimento := v_id_atendimento;
 
     RAISE NOTICE
         'Atendimento % registrado com sucesso.',
