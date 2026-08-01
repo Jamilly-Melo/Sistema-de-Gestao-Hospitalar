@@ -122,13 +122,22 @@ def remover_procedimento_realizado(
     *,
     session: Session | None = None,
 ) -> list[dict[str, Any]]:
-    """Remove um procedimento realizado, desde que ainda não faturado."""
+    """Remove um procedimento realizado, desde que ainda não faturado.
+
+    Devolve [] só quando o par (id_atendimento, id_procedimento) não existe.
+    Quando existe mas está faturado, levanta ValueError — o contrato antigo
+    (devolver [] nos dois casos) impedia a API de diferenciar "não existe" de
+    "recusado por regra de negócio".
+    """
     with sessao(session=session) as s:
         procedimento = s.get(
             ProcedimentoRealizado, (id_atendimento, id_procedimento)
         )
-        if procedimento is None or procedimento.faturado:
+        if procedimento is None:
             return []
+
+        if procedimento.faturado:
+            raise ValueError("Procedimento já faturado, não pode ser removido.")
 
         s.delete(procedimento)
         s.commit()

@@ -106,8 +106,11 @@ def test_remover_procedimento_nao_faturado(session_revertida):
 
 def test_nao_remove_procedimento_faturado(session_revertida):
     """O seed marca (1, 1) com faturado = TRUE."""
-    resultado = crud.remover_procedimento_realizado(1, 1, session=session_revertida)
-    assert resultado == []
+    import pytest
+
+    with pytest.raises(ValueError, match="já faturado"):
+        crud.remover_procedimento_realizado(1, 1, session=session_revertida)
+
     assert session_revertida.get(ProcedimentoRealizado, (1, 1)) is not None
 
 
