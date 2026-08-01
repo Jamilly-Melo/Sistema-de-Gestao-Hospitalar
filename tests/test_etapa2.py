@@ -27,3 +27,10 @@ def test_estatisticas_atendimentos_mensal(session_revertida):
         assert {"mes", "unidade", "total_atendimentos", "media_duracao_minutos"} <= set(
             resultado[0]
         )
+
+
+def test_tempo_medio_espera(session_revertida):
+    resultado = etapa2.tempo_medio_espera(session=session_revertida)
+    assert isinstance(resultado, list)
+    if resultado:
+        assert {"id_unidade", "unidade", "tempo_medio_espera"} <= set(resultado[0])

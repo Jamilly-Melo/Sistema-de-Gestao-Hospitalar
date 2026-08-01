@@ -41,3 +41,17 @@ def estatisticas_atendimentos_mensal(
             text("SELECT * FROM vw_estatisticas_atendimentos_mensal")
         )
         return [dict(linha) for linha in resultado.mappings()]
+
+
+def tempo_medio_espera(*, session: Session | None = None) -> list[dict[str, Any]]:
+    """Wrapper de sp_calcular_tempo_medio_espera.
+
+    A procedure devolve um REFCURSOR, não um result set direto: é preciso um
+    FETCH ALL explícito no mesmo cursor, dentro da mesma transação do CALL.
+    """
+    with sessao(session=session) as s:
+        s.execute(
+            text("CALL sp_calcular_tempo_medio_espera('cursor_tempo_espera')")
+        )
+        resultado = s.execute(text("FETCH ALL FROM cursor_tempo_espera"))
+        return [dict(linha) for linha in resultado.mappings()]
