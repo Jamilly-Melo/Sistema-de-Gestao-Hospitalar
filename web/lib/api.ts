@@ -1,4 +1,12 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+// No servidor (Server Components, rodando dentro do container `web`), "localhost"
+// aponta para o próprio container, não para o container `api` — por isso o
+// fetch server-side precisa de API_URL_INTERNAL (nome do serviço no Docker).
+// No navegador (Client Components), só o host consegue resolver `api`, então
+// o fetch client-side precisa da URL pública NEXT_PUBLIC_API_URL.
+const API_URL =
+  typeof window === "undefined"
+    ? process.env.API_URL_INTERNAL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+    : process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export class ApiError extends Error {
   status: number;
