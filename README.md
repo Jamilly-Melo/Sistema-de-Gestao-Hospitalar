@@ -1,22 +1,23 @@
 # Sistema de Gestão Hospitalar (SGH)
 
-Projeto acadêmico de banco de dados que modela o domínio de um hospital universitário com residentes, preceptores, pacientes, atendimentos, procedimentos e escalas de plantão. Inclui scripts SQL (DDL, carga, consultas e CRUD) e uma interface Streamlit para executar as queries de forma interativa.
+Projeto acadêmico de banco de dados que modela o domínio de um hospital universitário com residentes, preceptores, pacientes, atendimentos, procedimentos e escalas de plantão. Inclui scripts SQL (DDL, carga, consultas e CRUD), uma API FastAPI e um frontend Next.js para executar as queries de forma interativa.
 
 ## Objetivo
 
 - Representar o modelo relacional do hospital com restrições de integridade (PK, FK, UNIQUE, CHECK).
 - Disponibilizar consultas básicas, analíticas e operações CRUD parametrizadas para PostgreSQL.
-- Facilitar a demonstração das queries via interface web (Streamlit) rodando em Docker.
+- Facilitar a demonstração das queries via uma API HTTP (FastAPI) e um frontend web (Next.js) rodando em Docker.
 
 ## Stack
 
 | Camada | Tecnologia |
 |--------|------------|
 | Banco | PostgreSQL 16 |
-| Interface | Streamlit + pandas |
+| API | FastAPI |
+| Frontend | Next.js |
 | Acesso aos dados | SQLAlchemy 2.0 (ORM), psycopg2 como driver |
-| Empacotamento | uv + Docker Compose |
-| Linguagem | Python ≥ 3.12 |
+| Empacotamento | uv + npm + Docker Compose |
+| Linguagem | Python ≥ 3.12, TypeScript |
 
 ## Domínio (resumo)
 
@@ -38,16 +39,18 @@ Diagramas e material de modelagem estão em `documentacao/`.
 
 ```text
 .
-├── main.py                 # Interface Streamlit (única camada que conhece a UI)
 ├── sgh/                    # Camada de dados — não importa streamlit nem pandas
 │   ├── config.py           # DATABASE_URL a partir de variáveis de ambiente
 │   ├── database.py         # engine, sessões e helpers de execução
 │   ├── models/             # 14 models declarativos, por subdomínio
 │   ├── queries/            # basicas.py, analiticas.py, crud.py
-│   └── catalog.py          # catálogo de consultas consumido pela interface
-├── tests/                  # paridade contra os .sql + testes funcionais do CRUD
-├── docker-compose.yaml     # database + db-init + frontend + profiles de teste
-├── dockerfile
+│   └── catalog.py          # catálogo de consultas consumido pela API
+├── api/                    # API FastAPI — expõe sgh/ via HTTP (routers, schemas Pydantic)
+├── web/                    # Frontend Next.js — consome a API FastAPI
+├── tests/                  # paridade contra os .sql + testes funcionais do CRUD + testes de API
+├── docker-compose.yaml     # database + db-init + api + web + profiles de teste
+├── dockerfile              # imagem usada pelo serviço `testes` (roda pytest)
+├── Dockerfile.api           # imagem do serviço `api`
 ├── pyproject.toml / uv.lock
 ├── documentacao/           # Modelagem conceitual e relacional (PDF)
 └── sql/                    # DDL, carga, consultas e etapa 2 — fonte do schema
@@ -87,16 +90,19 @@ material da entrega. A aplicação não os executa mais: as consultas equivalent
 vivem em `sgh/queries/`, e os testes de paridade garantem que as duas versões
 devolvem o mesmo resultado.
 
-## Interface Streamlit
+## API + Frontend
 
-O `main.py` organiza as queries por categoria na sidebar:
+A `api/` expõe a camada `sgh/` via HTTP (FastAPI), e o `web/` é um frontend
+Next.js que consome essa API.
 
-1. Escolha a **categoria** (básicas / analíticas / CRUD).
-2. Escolha a **query**.
-3. Preencha os **parâmetros** (quando houver).
-4. Clique em **Executar** — resultados em tabela; operações de escrita fazem `commit`.
+- **API** — FastAPI na porta `8000`. Documentação OpenAPI interativa em
+  [http://localhost:8000/docs](http://localhost:8000/docs).
+- **Frontend** — Next.js na porta `3000`, com páginas para as consultas
+  básicas/analíticas e as operações de CRUD.
 
-### Configuração de conexão
+Ambos sobem via `docker compose up -d --build`, nos serviços `api` e `web`.
+
+### Configuração de conexão (API → banco)
 
 A conexão vem de variáveis de ambiente, com os defaults do Compose:
 
@@ -107,13 +113,6 @@ A conexão vem de variáveis de ambiente, com os defaults do Compose:
 | `DB_NAME` | `sgh_db` | |
 | `DB_USER` | `postgres` | |
 | `DB_PASSWORD` | `postgres` | |
-
-Para rodar fora do Docker, aponte para a porta publicada no host — sem editar
-código:
-
-```powershell
-$env:DB_HOST="localhost"; $env:DB_PORT="15435"; uv run streamlit run main.py
-```
 
 ## Como executar
 
@@ -129,9 +128,10 @@ Serviços:
 |---------|--------|---------------|
 | `database` | PostgreSQL | `15435` → `5432` |
 | `db-init` | Aplica etapa 1 (`criacao_tabela` + `insercao_dados`) e etapa 2 (`alteracoes`, `procedures`, `triggers`, `views`), com `ON_ERROR_STOP=1` | — (one-shot) |
-| `frontend` | Streamlit | `8501` |
+| `api` | FastAPI | `8000` |
+| `web` | Next.js | `3000` |
 
-Acesse a interface em [http://localhost:8501](http://localhost:8501).
+Acesse a interface em [http://localhost:3000](http://localhost:3000).
 
 Cliente SQL externo (pgAdmin, DBeaver, `psql`) pode conectar em:
 
@@ -139,15 +139,28 @@ Cliente SQL externo (pgAdmin, DBeaver, `psql`) pode conectar em:
 - Porta: `15435`
 - DB / user / senha: `sgh_db` / `postgres` / `postgres`
 
-### Localmente (sem Docker no frontend)
+### Localmente (sem Docker na API/frontend)
 
-Útil para desenvolver a UI. O Postgres ainda precisa estar acessível (Compose só com `database`, ou instância local).
+Útil para desenvolver a API ou a UI. O Postgres ainda precisa estar acessível
+(Compose só com `database`, ou instância local).
 
 ```powershell
 uv sync
 ```
 
-Depois, veja "Configuração de conexão" acima para apontar para a porta publicada no host.
+Para rodar a API apontando para a porta publicada no host, sem editar código:
+
+```powershell
+$env:DB_HOST="localhost"; $env:DB_PORT="15435"; uv run uvicorn api.main:app --reload --port 8000
+```
+
+Para rodar o frontend, copie `web/.env.local.example` para `web/.env.local`
+(ajustando a URL da API se necessário) e:
+
+```powershell
+cd web
+npm run dev
+```
 
 ## Testes
 
@@ -216,7 +229,7 @@ as sessões é por tempo. Concorrência não é coberta pela suíte de testes.
 ## Principais considerações
 
 1. **Host/porta dentro vs fora do container**  
-   No Compose, o frontend fala com o Postgres pelo hostname `database` na porta **5432**. A porta **15435** é só o mapeamento no host (`15435:5432`).
+   No Compose, a API fala com o Postgres pelo hostname `database` na porta **5432**. A porta **15435** é só o mapeamento no host (`15435:5432`).
 
    A porta publicada é **15435**, e não 5435, porque o Windows reserva
    dinamicamente a faixa 5358–5457 para o `winnat`; o bind na 5435 falha com
@@ -243,10 +256,17 @@ as sessões é por tempo. Concorrência não é coberta pela suíte de testes.
 6. **Documentação de modelagem**  
    PDFs de modelo conceitual, relacional e normalização estão em `documentacao/` e `documentacao/diagramas/`.
 
-7. **Camadas e o frontend futuro**  
+7. **Camadas**  
    `sgh/` não importa `streamlit` nem `pandas` — as funções devolvem
-   `list[dict]`. Isso é deliberado: permite servir a mesma camada de dados por
-   HTTP (FastAPI) para um frontend Next sem reescrever nada.
+   `list[dict]`. Isso é o que permitiu servir a mesma camada de dados por
+   HTTP (`api/`, FastAPI) para o frontend (`web/`, Next.js) sem reescrever nada.
+
+8. **Limitações conhecidas**  
+   A API e o frontend não têm autenticação nem autorização — qualquer
+   cliente com acesso à rede pode ler e escrever todos os dados. É uma
+   decisão de escopo deliberada para este projeto acadêmico, não um
+   descuido: adicionar autenticação (ex.: JWT, sessão) fica fora do escopo
+   atual.
 
 ## Credenciais padrão (desenvolvimento)
 
