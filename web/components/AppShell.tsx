@@ -47,14 +47,17 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen">
       <aside className="w-60 shrink-0 border-r bg-card">
-        <Link href="/" className="flex h-16 flex-col justify-center px-5">
+        <Link
+          href="/"
+          className="flex h-20 flex-col justify-center gap-0.5 border-b px-6"
+        >
           <span className="text-sm font-semibold tracking-tight">SGH</span>
           <span className="text-xs text-muted-foreground">Gestão Hospitalar</span>
         </Link>
-        <nav className="flex flex-col gap-6 px-3 py-2">
+        <nav className="flex flex-col gap-8 px-4 py-6">
           {GRUPOS.map((grupo) => (
-            <div key={grupo.titulo} className="flex flex-col gap-1">
-              <span className="px-3 pb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            <div key={grupo.titulo} className="flex flex-col gap-1.5">
+              <span className="px-3 pb-2 text-xs font-medium tracking-wider text-muted-foreground uppercase">
                 {grupo.titulo}
               </span>
               {grupo.itens.map((item) => {
@@ -66,7 +69,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                      "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors",
                       ativo
                         ? "bg-primary font-medium text-primary-foreground"
                         : "text-foreground hover:bg-muted"
