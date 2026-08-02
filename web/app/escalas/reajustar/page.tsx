@@ -62,13 +62,13 @@ export default function ReajustarEscalaPage() {
   return (
     <PageContainer>
       <PageHeader titulo="Reajustar escala" descricao="Mova um plantão de residente entre datas e turnos." />
-      <Card className="max-w-md">
+      <Card className="max-w-3xl">
         <CardHeader>
           <CardTitle>Mover plantão</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={enviar} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
+          <form onSubmit={enviar} className="grid grid-cols-2 gap-5">
+            <div className="col-span-2 flex flex-col gap-2">
               <Label>Residente</Label>
               <Autocomplete options={residentes} value={idResidente} onChange={setIdResidente} />
             </div>
@@ -128,9 +128,9 @@ export default function ReajustarEscalaPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button type="submit" className="w-fit">
-              Reajustar
-            </Button>
+            <div className="col-span-2">
+              <Button type="submit">Reajustar</Button>
+            </div>
           </form>
           {erro && (
             <Alert variant="destructive" className="mt-4">

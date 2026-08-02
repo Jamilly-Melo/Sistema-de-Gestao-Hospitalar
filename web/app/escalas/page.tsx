@@ -25,7 +25,7 @@ export default async function EscalasPage() {
         titulo="Plantões do mês corrente"
         descricao="Total de plantões por residente em cada unidade."
         acao={
-          <Link href="/escalas/reajustar" className={buttonVariants({ variant: "outline" })}>
+          <Link href="/escalas/reajustar" className={buttonVariants()}>
             Reajustar escala
           </Link>
         }

@@ -50,12 +50,12 @@ export default function EditarPacientePage() {
         titulo={<>Editar paciente #{params.id}</>}
         descricao="Atualize o endereço ou o número do convênio do paciente."
       />
-      <Card className="max-w-md">
+      <Card className="max-w-3xl">
         <CardHeader>
           <CardTitle>Atualizar cadastro</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={enviar} className="flex flex-col gap-4">
+          <form onSubmit={enviar} className="grid grid-cols-2 gap-5">
             <div className="flex flex-col gap-2">
               <Label htmlFor="campo">Campo</Label>
               <Select
@@ -79,9 +79,9 @@ export default function EditarPacientePage() {
               <Label htmlFor="valor">Novo valor</Label>
               <Input id="valor" value={valor} onChange={(e) => setValor(e.target.value)} />
             </div>
-            <Button type="submit" className="w-fit">
-              Salvar
-            </Button>
+            <div className="col-span-2">
+              <Button type="submit">Salvar</Button>
+            </div>
           </form>
           {erro && (
             <Alert variant="destructive" className="mt-4">

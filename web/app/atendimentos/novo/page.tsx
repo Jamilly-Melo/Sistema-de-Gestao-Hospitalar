@@ -79,12 +79,12 @@ export default function NovoAtendimentoPage() {
   return (
     <PageContainer>
       <PageHeader titulo="Novo atendimento" descricao="Registre um atendimento com paciente, equipe e procedimento." />
-      <Card className="max-w-md">
+      <Card className="max-w-3xl">
         <CardHeader>
           <CardTitle>Registrar atendimento</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={enviar} className="flex flex-col gap-4">
+          <form onSubmit={enviar} className="grid grid-cols-2 gap-5">
             <div className="flex flex-col gap-2">
               <Label>Paciente</Label>
               <Autocomplete options={pacientes} value={idPaciente} onChange={setIdPaciente} />
@@ -127,9 +127,9 @@ export default function NovoAtendimentoPage() {
                 onChange={(e) => setDuracaoMinutos(Number(e.target.value))}
               />
             </div>
-            <Button type="submit" className="w-fit">
-              Registrar
-            </Button>
+            <div className="col-span-2">
+              <Button type="submit">Registrar</Button>
+            </div>
           </form>
           {erro && (
             <Alert variant="destructive" className="mt-4">
