@@ -16,8 +16,15 @@ type Residente = {
   nome: string;
   ano_residencia: string;
   crm: string;
-  tempo_medio_de_atendimentos: number | null;
+  tempo_medio_de_atendimentos: string | null;
 };
+
+// A API devolve o AVG do Postgres como string de Decimal ("33.5000000000000000").
+function formatarMinutos(valor: string | null): string {
+  if (valor === null) return "—";
+  const numero = Number(valor);
+  return Number.isNaN(numero) ? "—" : numero.toFixed(1);
+}
 
 export default async function ResidentesPage() {
   const residentes = await apiFetch<Residente[]>("/profissionais/residentes");
@@ -50,7 +57,7 @@ export default async function ResidentesPage() {
                     <TableCell>{r.nome}</TableCell>
                     <TableCell>{r.ano_residencia}</TableCell>
                     <TableCell>{r.crm}</TableCell>
-                    <TableCell>{r.tempo_medio_de_atendimentos ?? "—"}</TableCell>
+                    <TableCell>{formatarMinutos(r.tempo_medio_de_atendimentos)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

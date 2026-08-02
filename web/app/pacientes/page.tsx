@@ -2,6 +2,7 @@ import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { PageContainer } from "@/components/PageContainer";
 import { PageHeader } from "@/components/PageHeader";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -12,14 +13,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-type Linha = { nome: string; data_hora: string | null };
+type Linha = { id_pessoa: number; nome: string; data_hora: string | null };
 
 export default async function PacientesPage() {
-  const linhas = await apiFetch<Linha[]>("/pacientes");
+  const linhas = await apiFetch<Linha[]>("/pacientes/listagem");
 
   return (
     <PageContainer>
-      <PageHeader titulo="Pacientes" descricao="Pacientes cadastrados e a data do último atendimento." />
+      <PageHeader
+        titulo="Pacientes"
+        descricao="Pacientes cadastrados e a data do último atendimento."
+      />
       <Card>
         <CardHeader>
           <CardTitle>Lista de pacientes</CardTitle>
@@ -35,13 +39,22 @@ export default async function PacientesPage() {
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Último atendimento</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {linhas.map((linha, indice) => (
-                  <TableRow key={indice}>
+                {linhas.map((linha) => (
+                  <TableRow key={linha.id_pessoa}>
                     <TableCell>{linha.nome}</TableCell>
                     <TableCell>{linha.data_hora ?? "—"}</TableCell>
+                    <TableCell className="text-right">
+                      <Link
+                        href={`/pacientes/${linha.id_pessoa}`}
+                        className={buttonVariants({ variant: "outline", size: "sm" })}
+                      >
+                        Editar
+                      </Link>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -49,13 +62,6 @@ export default async function PacientesPage() {
           )}
         </CardContent>
       </Card>
-      <p className="mt-4 text-sm text-muted-foreground">
-        Editar cadastro:{" "}
-        <Link className="underline" href="/pacientes/1">
-          ir para o formulário
-        </Link>{" "}
-        (digite o id do paciente na URL — não há detalhe por id nesta tela).
-      </p>
     </PageContainer>
   );
 }
