@@ -3,6 +3,19 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiFetch, ApiError } from "@/lib/api";
+import { PageContainer } from "@/components/PageContainer";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type Linha = {
   id_atendimento: number;
@@ -45,51 +58,74 @@ export default function AtendimentosPage() {
   }
 
   return (
-    <main>
-      <h1>Atendimentos</h1>
-      <p><Link href="/atendimentos/novo">Novo atendimento</Link></p>
-      {erro && <p role="alert">{erro}</p>}
-      <p>
-        A listagem abaixo não traz o id do procedimento (a consulta de origem só devolve o
-        nome do procedimento) — para remover, digite o id do procedimento ao lado do botão.
+    <PageContainer>
+      <h1 className="mb-6 text-2xl font-semibold">Atendimentos</h1>
+      <p className="mb-4">
+        <Link className="underline" href="/atendimentos/novo">
+          Novo atendimento
+        </Link>
       </p>
-      <table>
-        <thead>
-          <tr>
-            <th>Atendimento</th>
-            <th>Data</th>
-            <th>Procedimento</th>
-            <th>Qtd</th>
-            <th>Id do procedimento</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {linhas.map((linha, indice) => (
-            <tr key={indice}>
-              <td>{linha.id_atendimento}</td>
-              <td>{linha.data_hora}</td>
-              <td>{linha.nome}</td>
-              <td>{linha.quantidade}</td>
-              <td>
-                <input
-                  type="number"
-                  style={{ width: "5rem" }}
-                  value={idsProcedimento[indice] ?? ""}
-                  onChange={(evento) =>
-                    setIdsProcedimento((atual) => ({ ...atual, [indice]: evento.target.value }))
-                  }
-                />
-              </td>
-              <td>
-                <button onClick={() => remover(indice, linha.id_atendimento)}>
-                  Remover
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </main>
+      {erro && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{erro}</AlertDescription>
+        </Alert>
+      )}
+      <p className="mb-4 text-sm text-muted-foreground">
+        A listagem abaixo não traz o id do procedimento (a consulta de origem só
+        devolve o nome do procedimento) — para remover, digite o id do procedimento ao
+        lado do botão.
+      </p>
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de atendimentos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Atendimento</TableHead>
+                <TableHead>Data</TableHead>
+                <TableHead>Procedimento</TableHead>
+                <TableHead>Qtd</TableHead>
+                <TableHead>Id do procedimento</TableHead>
+                <TableHead></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {linhas.map((linha, indice) => (
+                <TableRow key={indice}>
+                  <TableCell>{linha.id_atendimento}</TableCell>
+                  <TableCell>{linha.data_hora}</TableCell>
+                  <TableCell>{linha.nome}</TableCell>
+                  <TableCell>{linha.quantidade}</TableCell>
+                  <TableCell>
+                    <Input
+                      type="number"
+                      className="w-20"
+                      value={idsProcedimento[indice] ?? ""}
+                      onChange={(evento) =>
+                        setIdsProcedimento((atual) => ({
+                          ...atual,
+                          [indice]: evento.target.value,
+                        }))
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => remover(indice, linha.id_atendimento)}
+                    >
+                      Remover
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </PageContainer>
   );
 }
