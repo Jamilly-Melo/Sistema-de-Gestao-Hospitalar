@@ -18,3 +18,8 @@
 
 # Entregáveis em PDF da disciplina: material da entrega, não da aplicação.
 documentacao/
+
+# node_modules/.next do host (Windows) não servem para o build da imagem `api`/
+# `testes` (contexto "."), e o Dockerfile.api/dockerfile não usam nada de web/.
+web/node_modules/
+web/.next/

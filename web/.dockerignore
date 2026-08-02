@@ -1,0 +1,8 @@
+# Dependências e build do host. O Dockerfile roda `npm ci` e `npm run build`
+# dentro do container; sem isto, o `COPY . .` copiaria o node_modules (binários
+# Windows) e o .next (build stale) do host por cima do que o container acabou
+# de gerar para Linux.
+node_modules
+.next
+
+.git

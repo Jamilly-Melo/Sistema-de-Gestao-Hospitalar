@@ -65,15 +65,23 @@ services:
     build:
       context: ./web
       dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_* só tem efeito se entrar no build (ver web/Dockerfile);
+        # colocar isto em `environment:` (runtime) seria inerte, porque
+        # Next.js inlina NEXT_PUBLIC_* em tempo de build.
+        NEXT_PUBLIC_API_URL: http://localhost:8000
     ports:
       - "3000:3000"
     depends_on:
       - api
     environment:
-      # Usado pelo navegador (client-side): o host só enxerga a API em localhost:8000.
-      NEXT_PUBLIC_API_URL: http://localhost:8000
-      # Usado pelo fetch server-side (Server Components), que roda dentro deste
-      # container: aqui "localhost" seria o próprio container `web`, não a API.
+      # NEXT_PUBLIC_API_URL não vai aqui: Next.js inlina NEXT_PUBLIC_* em tempo
+      # de build, não lê em runtime — por isso o valor usado pelo navegador vem
+      # do build.args acima, não de `environment:`. Colocá-lo aqui seria inerte.
+      #
+      # API_URL_INTERNAL sim é lido em runtime (fetch server-side, Server
+      # Components, que roda dentro deste container: aqui "localhost" seria o
+      # próprio container `web`, não a API).
       API_URL_INTERNAL: http://api:8000
 
   testes:

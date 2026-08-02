@@ -16,8 +16,7 @@ RUN uv sync --frozen
 
 COPY . ./
 
-EXPOSE 8501
-
-HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
-
-CMD ["uv", "run", "streamlit", "run", "main.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Imagem usada pelo serviço `testes` do docker-compose.yaml, que já sobrescreve
+# `command:` com ["uv", "run", "pytest", "-v"]. O CMD abaixo é só o default
+# sensato para quando a imagem é rodada isoladamente (sem override).
+CMD ["uv", "run", "pytest", "-v"]
