@@ -29,7 +29,9 @@ def test_residente_chega_ate_pessoa_por_profissional():
 
 def test_conta_pessoas_do_seed():
     with SessionLocal() as session:
-        assert len(session.execute(select(Pessoa.id_pessoa)).scalars().all()) == 15
+        # Seed: 15 pessoas originais + residente sem atendimento (16) +
+        # paciente sem atendimento (17).
+        assert len(session.execute(select(Pessoa.id_pessoa)).scalars().all()) == 17
 
 
 def test_importa_as_quatorze_classes():

@@ -7,15 +7,17 @@ from sgh.queries import lookups
 
 def test_listar_pacientes(session_revertida):
     resultado = lookups.listar_pacientes(session=session_revertida)
-    assert len(resultado) == 5
+    # Seed: 5 pacientes com atendimento + 1 sem nenhum (id_pessoa 17).
+    assert len(resultado) == 6
     assert {"id_pessoa", "nome"} <= set(resultado[0])
     ids = {linha["id_pessoa"] for linha in resultado}
-    assert ids == {1, 2, 3, 4, 5}
+    assert ids == {1, 2, 3, 4, 5, 17}
 
 
 def test_listar_unidades(session_revertida):
     resultado = lookups.listar_unidades(session=session_revertida)
-    assert len(resultado) == 3
+    # Seed: 3 unidades originais + 1 sem plantão (Pronto-Socorro).
+    assert len(resultado) == 4
     assert {"id_unidade", "nome"} <= set(resultado[0])
 
 
