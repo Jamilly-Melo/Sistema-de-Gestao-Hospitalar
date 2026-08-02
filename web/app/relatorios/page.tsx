@@ -69,7 +69,7 @@ export default function RelatoriosPage() {
                 setResultado(null);
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecione um relatório" />
               </SelectTrigger>
               <SelectContent>

@@ -59,7 +59,7 @@ export default function EditarPacientePage() {
                 value={campo}
                 onValueChange={(v) => setCampo(v as typeof campo)}
               >
-                <SelectTrigger id="campo">
+                <SelectTrigger id="campo" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

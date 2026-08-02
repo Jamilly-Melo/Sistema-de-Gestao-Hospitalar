@@ -87,7 +87,7 @@ export default function ReajustarEscalaPage() {
                 value={turnoOrigem}
                 onValueChange={(v) => setTurnoOrigem(v as Turno)}
               >
-                <SelectTrigger id="turno-origem">
+                <SelectTrigger id="turno-origem" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -115,7 +115,7 @@ export default function ReajustarEscalaPage() {
                 value={turnoDestino}
                 onValueChange={(v) => setTurnoDestino(v as Turno)}
               >
-                <SelectTrigger id="turno-destino">
+                <SelectTrigger id="turno-destino" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
