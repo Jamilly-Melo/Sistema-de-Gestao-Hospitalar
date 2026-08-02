@@ -3,6 +3,24 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiFetch, ApiError } from "@/lib/api";
+import { PageContainer } from "@/components/PageContainer";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+const CAMPOS = [
+  { value: "endereco", label: "Endereço" },
+  { value: "num_convenio", label: "Número do convênio" },
+] as const;
 
 export default function EditarPacientePage() {
   const params = useParams<{ id: string }>();
@@ -26,23 +44,48 @@ export default function EditarPacientePage() {
   }
 
   return (
-    <main>
-      <h1>Editar paciente #{params.id}</h1>
-      <form onSubmit={enviar}>
-        <label>
-          Campo:
-          <select value={campo} onChange={(e) => setCampo(e.target.value as typeof campo)}>
-            <option value="endereco">Endereço</option>
-            <option value="num_convenio">Número do convênio</option>
-          </select>
-        </label>
-        <label>
-          Novo valor:
-          <input value={valor} onChange={(e) => setValor(e.target.value)} />
-        </label>
-        <button type="submit">Salvar</button>
-      </form>
-      {erro && <p role="alert">{erro}</p>}
-    </main>
+    <PageContainer>
+      <h1 className="mb-6 text-2xl font-semibold">Editar paciente #{params.id}</h1>
+      <Card className="max-w-md">
+        <CardHeader>
+          <CardTitle>Atualizar cadastro</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={enviar} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="campo">Campo</Label>
+              <Select
+                items={CAMPOS}
+                value={campo}
+                onValueChange={(v) => setCampo(v as typeof campo)}
+              >
+                <SelectTrigger id="campo">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CAMPOS.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="valor">Novo valor</Label>
+              <Input id="valor" value={valor} onChange={(e) => setValor(e.target.value)} />
+            </div>
+            <Button type="submit" className="w-fit">
+              Salvar
+            </Button>
+          </form>
+          {erro && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertDescription>{erro}</AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+    </PageContainer>
   );
 }
