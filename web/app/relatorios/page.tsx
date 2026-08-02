@@ -2,8 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { apiFetch, ApiError } from "@/lib/api";
+import { PageContainer } from "@/components/PageContainer";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
-type Relatorio = { nome: string; description: string; params: { name: string; label: string; type: string }[] };
+type Relatorio = {
+  nome: string;
+  description: string;
+  params: { name: string; label: string; type: string }[];
+};
 
 export default function RelatoriosPage() {
   const [relatorios, setRelatorios] = useState<Relatorio[]>([]);
@@ -34,34 +51,71 @@ export default function RelatoriosPage() {
   }
 
   return (
-    <main>
-      <h1>Relatórios</h1>
-      <select value={selecionado ?? ""} onChange={(e) => { setSelecionado(e.target.value || null); setParametros({}); setResultado(null); }}>
-        <option value="">Selecione um relatório</option>
-        {relatorios.map((r) => <option key={r.nome} value={r.nome}>{r.nome}</option>)}
-      </select>
+    <PageContainer>
+      <h1 className="mb-6 text-2xl font-semibold">Relatórios</h1>
+      <Card className="max-w-md">
+        <CardHeader>
+          <CardTitle>Executar relatório</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label>Relatório</Label>
+            <Select
+              items={relatorios.map((r) => ({ value: r.nome, label: r.nome }))}
+              value={selecionado ?? undefined}
+              onValueChange={(v) => {
+                setSelecionado(v);
+                setParametros({});
+                setResultado(null);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um relatório" />
+              </SelectTrigger>
+              <SelectContent>
+                {relatorios.map((r) => (
+                  <SelectItem key={r.nome} value={r.nome}>
+                    {r.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-      {atual && (
-        <>
-          <p>{atual.description}</p>
-          {atual.params.map((param) => (
-            <label key={param.name}>
-              {param.label}
-              <input
-                value={parametros[param.name] ?? ""}
-                onChange={(e) => setParametros({ ...parametros, [param.name]: e.target.value })}
-              />
-            </label>
-          ))}
-          <button onClick={executar}>Executar</button>
-        </>
-      )}
+          {atual && (
+            <>
+              <p className="text-sm text-muted-foreground">{atual.description}</p>
+              {atual.params.map((param) => (
+                <div key={param.name} className="flex flex-col gap-2">
+                  <Label htmlFor={param.name}>{param.label}</Label>
+                  <Input
+                    id={param.name}
+                    value={parametros[param.name] ?? ""}
+                    onChange={(e) =>
+                      setParametros({ ...parametros, [param.name]: e.target.value })
+                    }
+                  />
+                </div>
+              ))}
+              <Button onClick={executar} className="w-fit">
+                Executar
+              </Button>
+            </>
+          )}
 
-      {erro && <p role="alert">{erro}</p>}
+          {erro && (
+            <Alert variant="destructive">
+              <AlertDescription>{erro}</AlertDescription>
+            </Alert>
+          )}
 
-      {resultado && (
-        <pre>{JSON.stringify(resultado, null, 2)}</pre>
-      )}
-    </main>
+          {resultado && (
+            <pre className="overflow-x-auto rounded-md bg-muted p-4 text-sm">
+              {JSON.stringify(resultado, null, 2)}
+            </pre>
+          )}
+        </CardContent>
+      </Card>
+    </PageContainer>
   );
 }
