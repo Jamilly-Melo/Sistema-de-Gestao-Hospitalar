@@ -94,11 +94,13 @@ def atualizar_dados_paciente(
     SQL não dá para escolher a tabela em tempo de execução. Em Python o despacho
     é um if.
 
-    A validação de quais campos são editáveis vive só na API (Pydantic, em
-    `api/schemas/pacientes.py`) — esta função não repete a checagem. O único
-    chamador real é a rota da API, que já restringe `campo` antes de chegar
-    aqui; qualquer valor diferente de "endereco" cai no `else` e grava em
-    `num_convenio`.
+    A validação de quais campos são editáveis vive principalmente na API
+    (Pydantic, em `api/schemas/pacientes.py`) — esta função não duplica essa
+    whitelist. Mas o dispatch abaixo é total: qualquer `campo` que não seja
+    "endereco" nem "num_convenio" levanta ValueError, em vez de cair
+    silenciosamente num `else` que gravaria em `num_convenio`. Isso importa
+    porque `sgh/catalog.py` também chama esta função, com uma restrição que é
+    só uma dica de UI (`"type": "select"`), não uma checagem em Python.
     """
     with sessao(session=session) as s:
         paciente = s.get(Paciente, id_paciente)
@@ -107,8 +109,10 @@ def atualizar_dados_paciente(
 
         if campo == "endereco":
             paciente.pessoa.endereco = valor
-        else:
+        elif campo == "num_convenio":
             paciente.num_convenio = valor
+        else:
+            raise ValueError(f"Campo não atualizável: {campo!r}.")
 
         s.commit()
         return [{"id_pessoa": paciente.id_pessoa}]
