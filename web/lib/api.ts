@@ -1,3 +1,5 @@
+import { mensagemDoErro } from "@/lib/erros";
+
 // No servidor (Server Components, rodando dentro do container `web`), "localhost"
 // aponta para o próprio container, não para o container `api` — por isso o
 // fetch server-side precisa de API_URL_INTERNAL (nome do serviço no Docker).
@@ -25,8 +27,13 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   });
 
   if (!resposta.ok) {
-    const corpo = await resposta.json().catch(() => ({ detail: resposta.statusText }));
-    throw new ApiError(resposta.status, corpo.detail ?? "Erro desconhecido.");
+    const corpo = await resposta
+      .json()
+      .catch(() => ({ detail: resposta.statusText }));
+    throw new ApiError(
+      resposta.status,
+      mensagemDoErro(corpo?.detail, resposta.statusText)
+    );
   }
 
   return resposta.json() as Promise<T>;

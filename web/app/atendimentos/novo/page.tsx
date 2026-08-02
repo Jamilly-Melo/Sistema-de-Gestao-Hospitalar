@@ -50,6 +50,26 @@ export default function NovoAtendimentoPage() {
   async function enviar(evento: React.FormEvent) {
     evento.preventDefault();
     setErro(null);
+
+    // Sem isto, submeter com campo vazio manda `null` num campo que a API exige
+    // como inteiro e volta um 422 — tecnicamente correto, mas o usuário só
+    // descobre o que faltou depois de tentar. Melhor dizer antes.
+    const faltando = [
+      [idPaciente, "Paciente"],
+      [idResidente, "Residente"],
+      [idPreceptor, "Preceptor"],
+      [idUnidade, "Unidade"],
+      [idProcedimento, "Procedimento"],
+      [dataHora || null, "Data/hora"],
+    ]
+      .filter(([valor]) => valor === null)
+      .map(([, rotulo]) => rotulo as string);
+
+    if (faltando.length > 0) {
+      setErro(`Preencha antes de registrar: ${faltando.join(", ")}.`);
+      return;
+    }
+
     try {
       await apiFetch("/atendimentos", {
         method: "POST",
