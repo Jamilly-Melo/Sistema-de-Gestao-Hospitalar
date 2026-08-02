@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from api.dependencies import get_session
 from api.schemas.pacientes import AtualizarPacienteRequest
-from sgh.queries import basicas, crud
+from sgh.queries import basicas, crud, lookups
 
 router = APIRouter(prefix="/pacientes", tags=["pacientes"])
 
@@ -18,6 +18,11 @@ router = APIRouter(prefix="/pacientes", tags=["pacientes"])
 def listar(session: Session = Depends(get_session)) -> list[dict[str, Any]]:
     """Listagem de pacientes com o atendimento mais recente (nome + data)."""
     return basicas.atendimentos_do_paciente(session=session)
+
+
+@router.get("/listagem")
+def listagem(session: Session = Depends(get_session)) -> list[dict[str, Any]]:
+    return lookups.listar_pacientes_com_ultimo_atendimento(session=session)
 
 
 @router.patch("/{id_paciente}")

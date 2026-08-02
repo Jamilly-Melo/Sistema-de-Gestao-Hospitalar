@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from api.dependencies import get_session
 from api.schemas.atendimentos import CriarAtendimentoRequest
-from sgh.queries import basicas, crud, etapa2
+from sgh.queries import basicas, crud, etapa2, lookups
 
 router = APIRouter(prefix="/atendimentos", tags=["atendimentos"])
 
@@ -34,6 +34,13 @@ def criar(
         session=session,
     )
     return resultado[0]
+
+
+@router.get("/{id_atendimento}/procedimentos")
+def listar_procedimentos(
+    id_atendimento: int, session: Session = Depends(get_session)
+) -> list[dict[str, Any]]:
+    return lookups.procedimentos_do_atendimento(id_atendimento, session=session)
 
 
 @router.delete("/{id_atendimento}/procedimentos/{id_procedimento}")
