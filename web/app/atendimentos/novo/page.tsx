@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Autocomplete } from "@/components/Autocomplete";
 import { apiFetch, ApiError } from "@/lib/api";
+import { PageContainer } from "@/components/PageContainer";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type Opcao = { id: number; nome: string };
 
@@ -32,8 +38,8 @@ export default function NovoAtendimentoPage() {
     apiFetch<{ id_profissional: number; nome: string }[]>("/profissionais/preceptores").then(
       (dados) => setPreceptores(dados.map((d) => ({ id: d.id_profissional, nome: d.nome })))
     );
-    apiFetch<{ id_unidade: number; nome: string }[]>("/lookups/unidades").then(
-      (dados) => setUnidades(dados.map((d) => ({ id: d.id_unidade, nome: d.nome })))
+    apiFetch<{ id_unidade: number; nome: string }[]>("/lookups/unidades").then((dados) =>
+      setUnidades(dados.map((d) => ({ id: d.id_unidade, nome: d.nome })))
     );
     apiFetch<{ id_procedimento: number; nome: string }[]>("/lookups/procedimentos").then(
       (dados) => setProcedimentos(dados.map((d) => ({ id: d.id_procedimento, nome: d.nome })))
@@ -70,19 +76,67 @@ export default function NovoAtendimentoPage() {
   }
 
   return (
-    <main>
-      <h1>Novo atendimento</h1>
-      <form onSubmit={enviar}>
-        <label>Paciente <Autocomplete options={pacientes} value={idPaciente} onChange={setIdPaciente} /></label>
-        <label>Residente <Autocomplete options={residentes} value={idResidente} onChange={setIdResidente} /></label>
-        <label>Preceptor <Autocomplete options={preceptores} value={idPreceptor} onChange={setIdPreceptor} /></label>
-        <label>Unidade <Autocomplete options={unidades} value={idUnidade} onChange={setIdUnidade} /></label>
-        <label>Procedimento <Autocomplete options={procedimentos} value={idProcedimento} onChange={setIdProcedimento} /></label>
-        <label>Data/hora <input type="datetime-local" value={dataHora} onChange={(e) => setDataHora(e.target.value)} /></label>
-        <label>Duração (min) <input type="number" value={duracaoMinutos} onChange={(e) => setDuracaoMinutos(Number(e.target.value))} /></label>
-        <button type="submit">Registrar</button>
-      </form>
-      {erro && <p role="alert">{erro}</p>}
-    </main>
+    <PageContainer>
+      <h1 className="mb-6 text-2xl font-semibold">Novo atendimento</h1>
+      <Card className="max-w-md">
+        <CardHeader>
+          <CardTitle>Registrar atendimento</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={enviar} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label>Paciente</Label>
+              <Autocomplete options={pacientes} value={idPaciente} onChange={setIdPaciente} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label>Residente</Label>
+              <Autocomplete options={residentes} value={idResidente} onChange={setIdResidente} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label>Preceptor</Label>
+              <Autocomplete options={preceptores} value={idPreceptor} onChange={setIdPreceptor} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label>Unidade</Label>
+              <Autocomplete options={unidades} value={idUnidade} onChange={setIdUnidade} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label>Procedimento</Label>
+              <Autocomplete
+                options={procedimentos}
+                value={idProcedimento}
+                onChange={setIdProcedimento}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="data-hora">Data/hora</Label>
+              <Input
+                id="data-hora"
+                type="datetime-local"
+                value={dataHora}
+                onChange={(e) => setDataHora(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="duracao">Duração (min)</Label>
+              <Input
+                id="duracao"
+                type="number"
+                value={duracaoMinutos}
+                onChange={(e) => setDuracaoMinutos(Number(e.target.value))}
+              />
+            </div>
+            <Button type="submit" className="w-fit">
+              Registrar
+            </Button>
+          </form>
+          {erro && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertDescription>{erro}</AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+    </PageContainer>
   );
 }
