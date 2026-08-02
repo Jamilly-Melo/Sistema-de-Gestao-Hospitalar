@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Autocomplete } from "@/components/Autocomplete";
 import { apiFetch, ApiError } from "@/lib/api";
 import { PageContainer } from "@/components/PageContainer";
+import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -60,7 +61,7 @@ export default function ReajustarEscalaPage() {
 
   return (
     <PageContainer>
-      <h1 className="mb-6 text-2xl font-semibold">Reajustar escala</h1>
+      <PageHeader titulo="Reajustar escala" descricao="Mova um plantão de residente entre datas e turnos." />
       <Card className="max-w-md">
         <CardHeader>
           <CardTitle>Mover plantão</CardTitle>

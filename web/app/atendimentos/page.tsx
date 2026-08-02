@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiFetch, ApiError } from "@/lib/api";
 import { PageContainer } from "@/components/PageContainer";
+import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -14,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type Linha = {
@@ -59,12 +60,15 @@ export default function AtendimentosPage() {
 
   return (
     <PageContainer>
-      <h1 className="mb-6 text-2xl font-semibold">Atendimentos</h1>
-      <p className="mb-4">
-        <Link className="underline" href="/atendimentos/novo">
-          Novo atendimento
-        </Link>
-      </p>
+      <PageHeader
+        titulo="Atendimentos"
+        descricao="Procedimentos registrados por atendimento."
+        acao={
+          <Link href="/atendimentos/novo" className={buttonVariants()}>
+            Novo atendimento
+          </Link>
+        }
+      />
       {erro && (
         <Alert variant="destructive" className="mb-4">
           <AlertDescription>{erro}</AlertDescription>

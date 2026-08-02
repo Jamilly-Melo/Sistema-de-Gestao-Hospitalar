@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch, ApiError } from "@/lib/api";
 import { PageContainer } from "@/components/PageContainer";
+import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -52,7 +53,7 @@ export default function RelatoriosPage() {
 
   return (
     <PageContainer>
-      <h1 className="mb-6 text-2xl font-semibold">Relatórios</h1>
+      <PageHeader titulo="Relatórios" descricao="Consultas analíticas sobre atendimentos, escalas e pacientes." />
       <Card className="max-w-md">
         <CardHeader>
           <CardTitle>Executar relatório</CardTitle>

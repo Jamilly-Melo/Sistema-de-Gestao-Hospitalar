@@ -1,5 +1,6 @@
 import { apiFetch } from "@/lib/api";
 import { PageContainer } from "@/components/PageContainer";
+import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -23,7 +24,7 @@ export default async function ResidentesPage() {
 
   return (
     <PageContainer>
-      <h1 className="mb-6 text-2xl font-semibold">Residentes</h1>
+      <PageHeader titulo="Residentes" descricao="Médicos em formação e seu tempo médio de atendimento." />
       <Card>
         <CardHeader>
           <CardTitle>Lista de residentes</CardTitle>

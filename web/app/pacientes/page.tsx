@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { PageContainer } from "@/components/PageContainer";
+import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -18,7 +19,7 @@ export default async function PacientesPage() {
 
   return (
     <PageContainer>
-      <h1 className="mb-6 text-2xl font-semibold">Pacientes</h1>
+      <PageHeader titulo="Pacientes" descricao="Pacientes cadastrados e a data do último atendimento." />
       <Card>
         <CardHeader>
           <CardTitle>Lista de pacientes</CardTitle>

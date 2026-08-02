@@ -1,5 +1,6 @@
 import { apiFetch } from "@/lib/api";
 import { PageContainer } from "@/components/PageContainer";
+import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -17,7 +18,7 @@ export default async function PreceptoresPage() {
 
   return (
     <PageContainer>
-      <h1 className="mb-6 text-2xl font-semibold">Preceptores</h1>
+      <PageHeader titulo="Preceptores" descricao="Profissionais responsáveis pela supervisão dos residentes." />
       <Card>
         <CardHeader>
           <CardTitle>Lista de preceptores</CardTitle>

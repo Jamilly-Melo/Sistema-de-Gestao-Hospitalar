@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { PageContainer } from "@/components/PageContainer";
+import { PageHeader } from "@/components/PageHeader";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -19,12 +21,15 @@ export default async function EscalasPage() {
 
   return (
     <PageContainer>
-      <h1 className="mb-6 text-2xl font-semibold">Plantões do mês corrente</h1>
-      <p className="mb-4">
-        <Link className="underline" href="/escalas/reajustar">
-          Reajustar escala
-        </Link>
-      </p>
+      <PageHeader
+        titulo="Plantões do mês corrente"
+        descricao="Total de plantões por residente em cada unidade."
+        acao={
+          <Link href="/escalas/reajustar" className={buttonVariants({ variant: "outline" })}>
+            Reajustar escala
+          </Link>
+        }
+      />
       <Card>
         <CardHeader>
           <CardTitle>Plantões</CardTitle>
