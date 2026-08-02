@@ -1,4 +1,14 @@
 import { apiFetch } from "@/lib/api";
+import { PageContainer } from "@/components/PageContainer";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type Residente = {
   id: number;
@@ -12,23 +22,35 @@ export default async function ResidentesPage() {
   const residentes = await apiFetch<Residente[]>("/profissionais/residentes");
 
   return (
-    <main>
-      <h1>Residentes</h1>
-      <table>
-        <thead>
-          <tr><th>Nome</th><th>Ano</th><th>CRM</th><th>Tempo médio (min)</th></tr>
-        </thead>
-        <tbody>
-          {residentes.map((r) => (
-            <tr key={r.id}>
-              <td>{r.nome}</td>
-              <td>{r.ano_residencia}</td>
-              <td>{r.crm}</td>
-              <td>{r.tempo_medio_de_atendimentos ?? "—"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </main>
+    <PageContainer>
+      <h1 className="mb-6 text-2xl font-semibold">Residentes</h1>
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de residentes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Ano</TableHead>
+                <TableHead>CRM</TableHead>
+                <TableHead>Tempo médio (min)</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {residentes.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell>{r.nome}</TableCell>
+                  <TableCell>{r.ano_residencia}</TableCell>
+                  <TableCell>{r.crm}</TableCell>
+                  <TableCell>{r.tempo_medio_de_atendimentos ?? "—"}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </PageContainer>
   );
 }
