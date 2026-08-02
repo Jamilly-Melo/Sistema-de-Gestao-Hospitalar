@@ -4,6 +4,19 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Autocomplete } from "@/components/Autocomplete";
 import { apiFetch, ApiError } from "@/lib/api";
+import { PageContainer } from "@/components/PageContainer";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type Opcao = { id: number; nome: string };
 type Turno = "MANHA" | "TARDE" | "NOITE";
@@ -43,29 +56,88 @@ export default function ReajustarEscalaPage() {
   }
 
   const turnos: Turno[] = ["MANHA", "TARDE", "NOITE"];
+  const turnoItems = turnos.map((t) => ({ value: t, label: t }));
 
   return (
-    <main>
-      <h1>Reajustar escala</h1>
-      <form onSubmit={enviar}>
-        <label>Residente <Autocomplete options={residentes} value={idResidente} onChange={setIdResidente} /></label>
-        <label>Data de origem <input type="date" value={dataOrigem} onChange={(e) => setDataOrigem(e.target.value)} /></label>
-        <label>
-          Turno de origem
-          <select value={turnoOrigem} onChange={(e) => setTurnoOrigem(e.target.value as Turno)}>
-            {turnos.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
-        </label>
-        <label>Data de destino <input type="date" value={dataDestino} onChange={(e) => setDataDestino(e.target.value)} /></label>
-        <label>
-          Turno de destino
-          <select value={turnoDestino} onChange={(e) => setTurnoDestino(e.target.value as Turno)}>
-            {turnos.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
-        </label>
-        <button type="submit">Reajustar</button>
-      </form>
-      {erro && <p role="alert">{erro}</p>}
-    </main>
+    <PageContainer>
+      <h1 className="mb-6 text-2xl font-semibold">Reajustar escala</h1>
+      <Card className="max-w-md">
+        <CardHeader>
+          <CardTitle>Mover plantão</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={enviar} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label>Residente</Label>
+              <Autocomplete options={residentes} value={idResidente} onChange={setIdResidente} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="data-origem">Data de origem</Label>
+              <Input
+                id="data-origem"
+                type="date"
+                value={dataOrigem}
+                onChange={(e) => setDataOrigem(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="turno-origem">Turno de origem</Label>
+              <Select
+                items={turnoItems}
+                value={turnoOrigem}
+                onValueChange={(v) => setTurnoOrigem(v as Turno)}
+              >
+                <SelectTrigger id="turno-origem">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {turnos.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="data-destino">Data de destino</Label>
+              <Input
+                id="data-destino"
+                type="date"
+                value={dataDestino}
+                onChange={(e) => setDataDestino(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="turno-destino">Turno de destino</Label>
+              <Select
+                items={turnoItems}
+                value={turnoDestino}
+                onValueChange={(v) => setTurnoDestino(v as Turno)}
+              >
+                <SelectTrigger id="turno-destino">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {turnos.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" className="w-fit">
+              Reajustar
+            </Button>
+          </form>
+          {erro && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertDescription>{erro}</AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+    </PageContainer>
   );
 }
