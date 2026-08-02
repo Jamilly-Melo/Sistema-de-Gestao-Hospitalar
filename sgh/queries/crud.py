@@ -26,8 +26,6 @@ from sgh.models import (
     Unidade,
 )
 
-CAMPOS_ATUALIZAVEIS = ("endereco", "num_convenio")
-
 
 def inserir_atendimento(
     data_hora: datetime,
@@ -95,13 +93,13 @@ def atualizar_dados_paciente(
     O SQL original fazia isso com uma CTE e dois UPDATEs condicionais, porque em
     SQL não dá para escolher a tabela em tempo de execução. Em Python o despacho
     é um if.
-    """
-    if campo not in CAMPOS_ATUALIZAVEIS:
-        raise ValueError(
-            f"Campo não atualizável: {campo!r}. "
-            f"Permitidos: {', '.join(CAMPOS_ATUALIZAVEIS)}."
-        )
 
+    A validação de quais campos são editáveis vive só na API (Pydantic, em
+    `api/schemas/pacientes.py`) — esta função não repete a checagem. O único
+    chamador real é a rota da API, que já restringe `campo` antes de chegar
+    aqui; qualquer valor diferente de "endereco" cai no `else` e grava em
+    `num_convenio`.
+    """
     with sessao(session=session) as s:
         paciente = s.get(Paciente, id_paciente)
         if paciente is None:
