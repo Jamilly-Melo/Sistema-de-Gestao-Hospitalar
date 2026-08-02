@@ -11,8 +11,11 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from api.dependencies import get_session
+from api.main import app
 from sgh.database import SessionLocal, engine
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -61,3 +64,22 @@ def session_revertida():
         session.close()
         transacao.rollback()
         conexao.close()
+
+
+@pytest.fixture
+def cliente_api(session_revertida):
+    """TestClient da API FastAPI, com `get_session` sobrescrito para usar a
+    mesma sessão revertível dos testes de sgh/ (mesma transação/savepoint,
+    desfeita ao fim do teste).
+
+    Consolidado aqui a partir do helper `_cliente` que era duplicado em cada
+    tests/test_api_*.py — cada um o chamava só com `next(...)`, então o
+    teardown depois do `yield` nunca rodava.
+    """
+
+    def _get_session():
+        yield session_revertida
+
+    app.dependency_overrides[get_session] = _get_session
+    yield TestClient(app, raise_server_exceptions=False)
+    app.dependency_overrides.clear()

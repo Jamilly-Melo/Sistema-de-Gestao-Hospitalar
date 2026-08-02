@@ -1,30 +1,13 @@
 from __future__ import annotations
 
-from fastapi.testclient import TestClient
 
-from api.dependencies import get_session
-from api.main import app
-
-
-def _cliente(session_revertida) -> TestClient:
-    def _get_session():
-        yield session_revertida
-
-    app.dependency_overrides[get_session] = _get_session
-    cliente = TestClient(app, raise_server_exceptions=False)
-    yield cliente
-    app.dependency_overrides.clear()
-
-
-def test_listar_atendimentos(session_revertida):
-    cliente = next(_cliente(session_revertida))
-    resposta = cliente.get("/atendimentos")
+def test_listar_atendimentos(cliente_api):
+    resposta = cliente_api.get("/atendimentos")
     assert resposta.status_code == 200
 
 
-def test_criar_atendimento(session_revertida):
-    cliente = next(_cliente(session_revertida))
-    resposta = cliente.post(
+def test_criar_atendimento(cliente_api):
+    resposta = cliente_api.post(
         "/atendimentos",
         json={
             "data_hora": "2026-08-01T09:00:00",
@@ -47,9 +30,8 @@ def test_criar_atendimento(session_revertida):
     assert isinstance(resposta.json()["id_atendimento"], int)
 
 
-def test_criar_atendimento_paciente_inexistente_devolve_409(session_revertida):
-    cliente = next(_cliente(session_revertida))
-    resposta = cliente.post(
+def test_criar_atendimento_paciente_inexistente_devolve_409(cliente_api):
+    resposta = cliente_api.post(
         "/atendimentos",
         json={
             "data_hora": "2026-08-01T09:00:00",
@@ -71,13 +53,11 @@ def test_criar_atendimento_paciente_inexistente_devolve_409(session_revertida):
     assert resposta.status_code == 409
 
 
-def test_remover_procedimento_nao_faturado(session_revertida):
-    cliente = next(_cliente(session_revertida))
-    resposta = cliente.delete("/atendimentos/2/procedimentos/2")
+def test_remover_procedimento_nao_faturado(cliente_api):
+    resposta = cliente_api.delete("/atendimentos/2/procedimentos/2")
     assert resposta.status_code == 200
 
 
-def test_remover_procedimento_faturado_devolve_422(session_revertida):
-    cliente = next(_cliente(session_revertida))
-    resposta = cliente.delete("/atendimentos/1/procedimentos/1")
+def test_remover_procedimento_faturado_devolve_422(cliente_api):
+    resposta = cliente_api.delete("/atendimentos/1/procedimentos/1")
     assert resposta.status_code == 422
