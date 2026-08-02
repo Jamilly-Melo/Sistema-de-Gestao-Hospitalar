@@ -25,22 +25,28 @@ export default async function PacientesPage() {
           <CardTitle>Lista de pacientes</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Último atendimento</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {linhas.map((linha, indice) => (
-                <TableRow key={indice}>
-                  <TableCell>{linha.nome}</TableCell>
-                  <TableCell>{linha.data_hora ?? "—"}</TableCell>
+          {linhas.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Nenhum paciente cadastrado.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Último atendimento</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {linhas.map((linha, indice) => (
+                  <TableRow key={indice}>
+                    <TableCell>{linha.nome}</TableCell>
+                    <TableCell>{linha.data_hora ?? "—"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
       <p className="mt-4 text-sm text-muted-foreground">

@@ -24,22 +24,28 @@ export default async function PreceptoresPage() {
           <CardTitle>Lista de preceptores</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Titulação</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {preceptores.map((p) => (
-                <TableRow key={p.id_profissional}>
-                  <TableCell>{p.nome}</TableCell>
-                  <TableCell>{p.titulacao}</TableCell>
+          {preceptores.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Nenhum preceptor cadastrado.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Titulação</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {preceptores.map((p) => (
+                  <TableRow key={p.id_profissional}>
+                    <TableCell>{p.nome}</TableCell>
+                    <TableCell>{p.titulacao}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </PageContainer>

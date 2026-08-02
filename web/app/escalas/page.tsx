@@ -35,24 +35,30 @@ export default async function EscalasPage() {
           <CardTitle>Plantões</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Unidade</TableHead>
-                <TableHead>Residente</TableHead>
-                <TableHead>Total de plantões</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {linhas.map((linha, indice) => (
-                <TableRow key={indice}>
-                  <TableCell>{linha.unidade ?? "—"}</TableCell>
-                  <TableCell>{linha.residente}</TableCell>
-                  <TableCell>{linha.total_plantoes}</TableCell>
+          {linhas.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Nenhum plantão no mês corrente.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Unidade</TableHead>
+                  <TableHead>Residente</TableHead>
+                  <TableHead>Total de plantões</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {linhas.map((linha, indice) => (
+                  <TableRow key={indice}>
+                    <TableCell>{linha.unidade ?? "—"}</TableCell>
+                    <TableCell>{linha.residente}</TableCell>
+                    <TableCell>{linha.total_plantoes}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </PageContainer>

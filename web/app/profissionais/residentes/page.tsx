@@ -30,26 +30,32 @@ export default async function ResidentesPage() {
           <CardTitle>Lista de residentes</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Ano</TableHead>
-                <TableHead>CRM</TableHead>
-                <TableHead>Tempo médio (min)</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {residentes.map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell>{r.nome}</TableCell>
-                  <TableCell>{r.ano_residencia}</TableCell>
-                  <TableCell>{r.crm}</TableCell>
-                  <TableCell>{r.tempo_medio_de_atendimentos ?? "—"}</TableCell>
+          {residentes.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Nenhum residente cadastrado.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Ano</TableHead>
+                  <TableHead>CRM</TableHead>
+                  <TableHead>Tempo médio (min)</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {residentes.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell>{r.nome}</TableCell>
+                    <TableCell>{r.ano_residencia}</TableCell>
+                    <TableCell>{r.crm}</TableCell>
+                    <TableCell>{r.tempo_medio_de_atendimentos ?? "—"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </PageContainer>

@@ -84,50 +84,56 @@ export default function AtendimentosPage() {
           <CardTitle>Lista de atendimentos</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Atendimento</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Procedimento</TableHead>
-                <TableHead>Qtd</TableHead>
-                <TableHead>Id do procedimento</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {linhas.map((linha, indice) => (
-                <TableRow key={indice}>
-                  <TableCell>{linha.id_atendimento}</TableCell>
-                  <TableCell>{linha.data_hora}</TableCell>
-                  <TableCell>{linha.nome}</TableCell>
-                  <TableCell>{linha.quantidade}</TableCell>
-                  <TableCell>
-                    <Input
-                      type="number"
-                      className="w-20"
-                      value={idsProcedimento[indice] ?? ""}
-                      onChange={(evento) =>
-                        setIdsProcedimento((atual) => ({
-                          ...atual,
-                          [indice]: evento.target.value,
-                        }))
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => remover(indice, linha.id_atendimento)}
-                    >
-                      Remover
-                    </Button>
-                  </TableCell>
+          {linhas.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Nenhum atendimento registrado.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Atendimento</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Procedimento</TableHead>
+                  <TableHead>Qtd</TableHead>
+                  <TableHead>Id do procedimento</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {linhas.map((linha, indice) => (
+                  <TableRow key={indice}>
+                    <TableCell>{linha.id_atendimento}</TableCell>
+                    <TableCell>{linha.data_hora}</TableCell>
+                    <TableCell>{linha.nome}</TableCell>
+                    <TableCell>{linha.quantidade}</TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        className="w-20"
+                        value={idsProcedimento[indice] ?? ""}
+                        onChange={(evento) =>
+                          setIdsProcedimento((atual) => ({
+                            ...atual,
+                            [indice]: evento.target.value,
+                          }))
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => remover(indice, linha.id_atendimento)}
+                      >
+                        Remover
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </PageContainer>
