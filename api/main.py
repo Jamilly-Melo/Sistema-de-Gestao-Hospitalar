@@ -5,10 +5,12 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from api.errors import registrar_handlers_de_erro
+from api.routers.atendimentos import router as atendimentos_router
 from api.routers.pacientes import router as pacientes_router
 from api.routers.profissionais import router as profissionais_router
 
 app = FastAPI(title="Sistema de Gestão Hospitalar")
 registrar_handlers_de_erro(app)
+app.include_router(atendimentos_router)
 app.include_router(pacientes_router)
 app.include_router(profissionais_router)
