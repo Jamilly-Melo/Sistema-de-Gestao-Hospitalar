@@ -91,7 +91,7 @@ export default function NovoAtendimentoPage() {
         }),
       });
       router.push(
-        `/atendimentos?ok=${encodeURIComponent("Atendimento registrado com sucesso.")}`
+        `/atendimentos?ok=${encodeURIComponent("Atendimento registrado.")}`
       );
     } catch (excecao) {
       setErro(excecao instanceof ApiError ? excecao.message : "Erro inesperado.");

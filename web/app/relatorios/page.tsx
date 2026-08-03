@@ -65,9 +65,14 @@ function formatarDuracao(texto: string): string | null {
 // Chave fora do mapa aparece crua: feio, mas honesto.
 const ROTULOS_COLUNA: Record<string, string> = {
   data_hora: "Data/hora",
+  data_hora_entrada: "Entrada",
+  data_hora_saida: "Saída",
   data_plantao: "Data do plantão",
+  id_atendimento: "ID do atendimento",
   id_escala: "ID da escala",
-  id_pessoa: "ID",
+  id_internacao: "ID da internação",
+  id_paciente: "ID do paciente",
+  id_pessoa: "ID do paciente",
   id_preceptor: "ID do preceptor",
   id_procedimento_mais_comum: "ID do procedimento mais comum",
   id_residente: "ID do residente",

@@ -44,7 +44,7 @@ export default function ReajustarEscalaPage() {
   const router = useRouter();
   const [residentes, setResidentes] = useState<Opcao[]>([]);
   const [idResidente, setIdResidente] = useState<number | null>(null);
-  const [plantoes, setPlantoes] = useState<Plantao[]>([]);
+  const [plantoes, setPlantoes] = useState<Plantao[] | null>(null);
   const [origem, setOrigem] = useState<string | null>(null);
   const [dataDestino, setDataDestino] = useState("");
   const [turnoDestino, setTurnoDestino] = useState<Turno>("MANHA");
@@ -55,10 +55,12 @@ export default function ReajustarEscalaPage() {
   }, []);
 
   const carregarPlantoes = useCallback(async () => {
+    setErro(null);
     if (idResidente === null) {
       setPlantoes([]);
       return;
     }
+    setPlantoes(null);
     try {
       setPlantoes(await apiFetch<Plantao[]>(`/escalas/residente/${idResidente}`));
     } catch (excecao) {
@@ -95,7 +97,11 @@ export default function ReajustarEscalaPage() {
           turno_destino: turnoDestino,
         }),
       });
-      router.push(`/escalas?ok=${encodeURIComponent("Escala reajustada com sucesso.")}`);
+      router.push(
+        `/escalas?ok=${encodeURIComponent(
+          `Plantão movido para ${dataDestino} (${turnoDestino}).`
+        )}`
+      );
     } catch (excecao) {
       setErro(excecao instanceof ApiError ? excecao.message : "Erro inesperado.");
     }
@@ -127,6 +133,10 @@ export default function ReajustarEscalaPage() {
               {idResidente === null ? (
                 <p className="text-sm text-muted-foreground">
                   Escolha um residente para ver os plantões dele.
+                </p>
+              ) : plantoes === null ? (
+                <p className="text-sm text-muted-foreground">
+                  Carregando plantões…
                 </p>
               ) : plantoes.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
