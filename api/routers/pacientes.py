@@ -9,19 +9,21 @@ from sqlalchemy.orm import Session
 
 from api.dependencies import get_session
 from api.schemas.pacientes import AtualizarPacienteRequest
-from sgh.queries import basicas, crud, lookups
+from sgh.queries import crud, lookups
 
 router = APIRouter(prefix="/pacientes", tags=["pacientes"])
 
 
-@router.get("")
-def listar(session: Session = Depends(get_session)) -> list[dict[str, Any]]:
-    """Listagem de pacientes com o atendimento mais recente (nome + data)."""
-    return basicas.atendimentos_do_paciente(session=session)
-
-
 @router.get("/listagem")
 def listagem(session: Session = Depends(get_session)) -> list[dict[str, Any]]:
+    """Um paciente por linha, com o último atendimento: data, equipe e
+    procedimentos.
+
+    Não há `GET /pacientes` servindo `basicas.atendimentos_do_paciente`: aquela
+    consulta devolve uma linha por atendimento, e a tela precisa de uma por
+    paciente. Ela continua no CATALOGO e coberta pelos testes de paridade — só
+    não tem rota HTTP, porque ninguém a consumia por HTTP.
+    """
     return lookups.listar_pacientes_com_ultimo_atendimento(session=session)
 
 
