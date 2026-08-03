@@ -28,6 +28,7 @@ import {
 type Relatorio = {
   nome: string;
   description: string;
+  tecnica: string;
   params: { name: string; label: string; type: string }[];
 };
 
@@ -54,6 +55,54 @@ function formatarDuracao(texto: string): string | null {
   if (Number(segundos) > 0) pedacos.push(`${Number(segundos)}s`);
 
   return pedacos.length > 0 ? pedacos.join(" ") : "0min";
+}
+
+// As consultas devolvem os nomes de coluna do banco (snake_case), e algumas são
+// ambíguas fora do contexto do SQL. O caso que motivou isto: "titulacao", no
+// relatório de residentes sem supervisor, é a titulação do PRECEPTOR, não do
+// residente — a view filtra por `pc.titulacao NOT IN ('DOUTOR', 'POS_DOUTOR')`.
+// A view é artefato da entrega avaliada e não muda; o rótulo é de exibição.
+// Chave fora do mapa aparece crua: feio, mas honesto.
+const ROTULOS_COLUNA: Record<string, string> = {
+  data_hora: "Data/hora",
+  data_plantao: "Data do plantão",
+  id_escala: "ID da escala",
+  id_pessoa: "ID",
+  id_preceptor: "ID do preceptor",
+  id_procedimento_mais_comum: "ID do procedimento mais comum",
+  id_residente: "ID do residente",
+  id_unidade: "ID da unidade",
+  media_duracao_minutos: "Duração média (min)",
+  mes: "Mês",
+  paciente: "Paciente",
+  percentual_risco_alto: "% de risco alto",
+  preceptor: "Preceptor",
+  procedimento_mais_comum: "Procedimento mais comum",
+  procedimentos: "Procedimentos",
+  procedimentos_risco_alto: "Procedimentos de risco alto",
+  quantidade_procedimento_mais_comum: "Qtd. do procedimento mais comum",
+  residente: "Residente",
+  tempo_medio_espera: "Tempo médio de espera",
+  titulacao: "Titulação do preceptor",
+  total_atendimentos: "Total de atendimentos",
+  total_plantoes: "Total de plantões",
+  total_procedimentos: "Total de procedimentos",
+  turno: "Turno",
+  unidade: "Unidade",
+};
+
+function rotuloDaColuna(chave: string): string {
+  return ROTULOS_COLUNA[chave] ?? chave;
+}
+
+// Mostra qual item da Etapa 2 o relatório demonstra — serve à apresentação da
+// disciplina: dá para ver "View" ou "Stored procedure" sem ler o código.
+function EtiquetaTecnica({ tecnica }: { tecnica: string }) {
+  return (
+    <span className="rounded-md border bg-muted px-2 py-0.5 text-xs font-medium whitespace-nowrap">
+      {tecnica}
+    </span>
+  );
 }
 
 // O resultado de um relatório é uma lista de objetos com formato desconhecido em
@@ -126,7 +175,10 @@ export default function RelatoriosPage() {
               <SelectContent>
                 {relatorios.map((r) => (
                   <SelectItem key={r.nome} value={r.nome}>
-                    {r.nome}
+                    <span className="flex items-center gap-2">
+                      {r.nome}
+                      <EtiquetaTecnica tecnica={r.tecnica} />
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -135,7 +187,10 @@ export default function RelatoriosPage() {
 
           {atual && (
             <>
-              <p className="text-sm text-muted-foreground">{atual.description}</p>
+              <div className="flex items-start gap-2">
+                <EtiquetaTecnica tecnica={atual.tecnica} />
+                <p className="text-sm text-muted-foreground">{atual.description}</p>
+              </div>
               {atual.params.map((param) => (
                 <div key={param.name} className="flex flex-col gap-2">
                   <Label htmlFor={param.name}>{param.label}</Label>
@@ -170,7 +225,7 @@ export default function RelatoriosPage() {
                 <TableHeader>
                   <TableRow>
                     {Object.keys(resultado[0]).map((coluna) => (
-                      <TableHead key={coluna}>{coluna}</TableHead>
+                      <TableHead key={coluna}>{rotuloDaColuna(coluna)}</TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
