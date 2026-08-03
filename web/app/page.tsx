@@ -23,7 +23,7 @@ type Indicador = {
 
 export default async function HomePage() {
   const [pacientes, residentes, preceptores, atendimentos] = await Promise.all([
-    apiFetch<unknown[]>("/pacientes"),
+    apiFetch<unknown[]>("/pacientes/listagem"),
     apiFetch<unknown[]>("/profissionais/residentes"),
     apiFetch<unknown[]>("/profissionais/preceptores"),
     apiFetch<LinhaAtendimento[]>("/atendimentos"),

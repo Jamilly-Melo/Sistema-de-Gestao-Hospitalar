@@ -23,7 +23,7 @@ def test_flamenguistas_e_subconjunto_de_todos_os_preceptores():
 
     todos = {p["nome"] for p in lookups.listar_preceptores()}
     filtrados = {p["preceptor"] for p in avancadas.preceptores_de_pacientes_flamenguistas()}
-    assert filtrados <= todos
+    assert filtrados < todos
 
 
 def test_percentual_cobre_todos_os_residentes():
@@ -104,15 +104,43 @@ def test_paciente_sem_atendimento_vem_com_campos_nulos():
 
 
 def test_lista_de_procedimentos_bate_com_a_consulta_de_apoio():
-    """Atendimentos 1, 6 e 9 do seed têm múltiplos procedimentos."""
+    """Os nomes de procedimentos do último atendimento batem com lookups.procedimentos_do_atendimento.
+
+    `ultimo_atendimento_por_paciente` não devolve o id_atendimento, então o
+    atendimento de cada linha é reencontrado por paciente + data_hora (par que
+    é único no seed) para poder chamar a consulta de apoio pelo id e comparar.
+    """
+    from sqlalchemy import select
+
+    from sgh.database import sessao
+    from sgh.models import Atendimento, Paciente, Pessoa
     from sgh.queries import lookups
 
-    for linha in avancadas.ultimo_atendimento_por_paciente():
-        if linha["data_hora"] is None:
-            continue
-        assert all(isinstance(nome, str) for nome in linha["procedimentos"])
+    with sessao() as session:
+        for linha in avancadas.ultimo_atendimento_por_paciente():
+            if linha["data_hora"] is None:
+                continue
 
-    # ao menos um paciente deve ter mais de um procedimento no último atendimento
+            id_atendimento = session.execute(
+                select(Atendimento.id_atendimento)
+                .join(Paciente, Paciente.id_pessoa == Atendimento.id_paciente)
+                .join(Pessoa, Pessoa.id_pessoa == Paciente.id_pessoa)
+                .where(
+                    Pessoa.nome == linha["paciente"],
+                    Atendimento.data_hora == linha["data_hora"],
+                )
+            ).scalar_one()
+
+            esperado = {
+                procedimento["nome"]
+                for procedimento in lookups.procedimentos_do_atendimento(
+                    id_atendimento, session=session
+                )
+            }
+            assert set(linha["procedimentos"]) == esperado
+
+    # ao menos um paciente deve ter mais de um procedimento no último atendimento,
+    # senão a comparação de conjuntos acima não exerceria o caso de lista com N>1
     assert any(
         len(l["procedimentos"]) > 1
         for l in avancadas.ultimo_atendimento_por_paciente()

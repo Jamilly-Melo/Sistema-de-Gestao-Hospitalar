@@ -1,8 +1,13 @@
-"""Consultas de apoio para autocomplete.
+"""Consultas de apoio para telas do front.
 
-Não entram no CATALOGO: não são "operações de negócio" que o usuário executa,
-são listas triviais (id + nome) que alimentam campos de formulário no front.
-Sem JOIN complexo, sem agregação — só o suficiente para popular um autocomplete.
+Não entram no CATALOGO: o critério não é a complexidade da consulta — algumas
+aqui têm JOIN e até agregação (`listar_pacientes_com_ultimo_atendimento` faz
+outerjoin + GROUP BY + func.max()) —, e sim o que a consulta serve. Nenhuma
+função deste módulo é uma "operação de negócio" do sistema; cada uma existe
+porque uma tela específica precisa de colunas ou de um formato que as
+consultas avaliadas (basicas/analiticas/etapa2) não devolvem, e alterá-las
+mexeria num artefato da entrega avaliada. Por isso a necessidade de tela mora
+aqui, fora do que é avaliado.
 """
 
 from __future__ import annotations

@@ -32,9 +32,14 @@ export default function DetalheAtendimentoPage() {
   const [erro, setErro] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
-    setProcedimentos(
-      await apiFetch<Procedimento[]>(`/atendimentos/${params.id}/procedimentos`)
-    );
+    setErro(null);
+    try {
+      setProcedimentos(
+        await apiFetch<Procedimento[]>(`/atendimentos/${params.id}/procedimentos`)
+      );
+    } catch (excecao) {
+      setErro(excecao instanceof ApiError ? excecao.message : "Erro inesperado.");
+    }
   }, [params.id]);
 
   useEffect(() => {
