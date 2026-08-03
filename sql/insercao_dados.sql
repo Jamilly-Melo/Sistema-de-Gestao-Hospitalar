@@ -126,6 +126,22 @@ VALUES
         FALSE,
         '81987506070',
         'Avenida dos Estados, 160'
+    ),
+    (
+        'Rodrigo Almeida Barros',
+        '17171717171',
+        '1986-06-06',
+        FALSE,
+        '83991122334',
+        'Rua Nova Aurora, 170'
+    ),
+    (
+        'Beatriz Nogueira Lima',
+        '18181818181',
+        '1996-07-07',
+        TRUE,
+        '81993344556',
+        'Avenida Litorânea, 180'
     );
 
 
@@ -139,7 +155,10 @@ VALUES
     (2, 'C002', 'O+'),
     (3, 'C003', 'B+'),
     (4, 'C004', 'AB+'),
-    (5, 'C005', 'O-');
+    (5, 'C005', 'O-'),
+    -- Paciente sem nenhum atendimento (id_pessoa 17 = Beatriz Nogueira Lima):
+    -- exercita o "—" na coluna de último atendimento.
+    (17, 'C006', 'O+');
 
 
 INSERT INTO alergia (nome)
@@ -179,7 +198,10 @@ VALUES
     (12, 'CRM007', '2017-01-01', 'Pediatria'),
     (13, 'CRM008', '2016-01-01', 'Cirurgia Geral'),
     (14, 'CRM009', '2015-01-01', 'Ortopedia'),
-    (15, 'CRM010', '2014-01-01', 'Cardiologia');
+    (15, 'CRM010', '2014-01-01', 'Cardiologia'),
+    -- Residente sem nenhum atendimento (id_pessoa 16 = Rodrigo Almeida
+    -- Barros): exercita o "—" na coluna de tempo médio.
+    (16, 'CRM011', '2025-01-01', 'Neurologia');
 
 
 INSERT INTO residente (
@@ -191,7 +213,8 @@ VALUES
     (7, 'R1'),
     (8, 'R2'),
     (9, 'R2'),
-    (10, 'R3');
+    (10, 'R3'),
+    (16, 'R1');
 
 
 INSERT INTO preceptor (
@@ -214,7 +237,10 @@ INSERT INTO unidade (
 VALUES
     ('Unidade de Terapia Intensiva', 'UTI', 20),
     ('Enfermaria Geral', 'ENFERMARIA', 40),
-    ('Ambulatório Geral', 'AMBULATORIO', 0);
+    ('Ambulatório Geral', 'AMBULATORIO', 0),
+    -- Unidade sem nenhum plantão escalado: exercita a ausência no painel de
+    -- escalas. Não deve aparecer em nenhum INSERT de `escala` neste arquivo.
+    ('Pronto-Socorro', 'PRONTO_SOCORRO', 15);
 
 
 INSERT INTO procedimento (
@@ -344,6 +370,71 @@ VALUES
         50,
         'Material enviado para análise.',
         FALSE
+    ),
+    -- Atendimentos com múltiplos procedimentos (reutilizam atendimentos já
+    -- existentes em vez de criar atendimento novo: a Etapa 2, em
+    -- sql/etapa2/alteracoes.sql — fora do escopo desta task —, faz
+    -- `UPDATE atendimento SET id_unidade = CASE WHEN id_atendimento IN
+    -- (1,4,7,10)/(2,5,8)/(3,6,9) ...` seguido de `ALTER COLUMN id_unidade SET
+    -- NOT NULL`; um atendimento novo com id fora dessas listas ficaria com
+    -- id_unidade NULL e quebraria o db-init inteiro). Atendimento 1 já tem o
+    -- procedimento 1 faturado — acrescentar aqui um não faturado exercita as
+    -- duas situações lado a lado na mesma tela de detalhe.
+    (
+        1,
+        3,
+        1,
+        20,
+        'Medicação de apoio aplicada durante o mesmo atendimento.',
+        FALSE
+    ),
+    (
+        1,
+        6,
+        1,
+        15,
+        'Curativo complementar realizado no mesmo atendimento.',
+        TRUE
+    ),
+    (
+        6,
+        2,
+        1,
+        33,
+        'Sutura adicional realizada no mesmo atendimento.',
+        TRUE
+    ),
+    (
+        6,
+        9,
+        1,
+        27,
+        'Intubação de apoio no mesmo atendimento.',
+        FALSE
+    ),
+    (
+        6,
+        4,
+        1,
+        22,
+        'Raio X complementar no mesmo atendimento.',
+        FALSE
+    ),
+    (
+        9,
+        5,
+        1,
+        125,
+        'Procedimento cirúrgico adicional no mesmo atendimento.',
+        FALSE
+    ),
+    (
+        9,
+        7,
+        1,
+        42,
+        'Tomografia complementar no mesmo atendimento.',
+        FALSE
     );
 
 
@@ -365,3 +456,28 @@ VALUES
     ('2026-07-07', 'TARDE', 3, 8, 13),
     ('2026-07-08', 'NOITE', 1, 9, 14),
     ('2026-07-09', 'MANHA', 2, 10, 15);
+
+
+-- Mais escalas no mês corrente, para o painel de escalas não ficar quase
+-- vazio. O bloco acima está fixo em julho/2026; estas datas são relativas a
+-- CURRENT_DATE (relógio do banco) para continuarem valendo em qualquer mês
+-- em que o db-init for executado — ver tests/test_paridade_leituras.py,
+-- _dia_do_mes_corrente, sobre por que uma data fixa não serve aqui. A
+-- unidade 4 (Pronto-Socorro) fica de fora de propósito: é a unidade sem
+-- plantão.
+INSERT INTO escala (
+    data_plantao,
+    turno,
+    id_unidade,
+    id_residente,
+    id_preceptor
+)
+VALUES
+    (DATE_TRUNC('month', CURRENT_DATE)::date + 2, 'MANHA', 1, 6, 11),
+    (DATE_TRUNC('month', CURRENT_DATE)::date + 2, 'TARDE', 2, 7, 12),
+    (DATE_TRUNC('month', CURRENT_DATE)::date + 3, 'NOITE', 3, 8, 13),
+    (DATE_TRUNC('month', CURRENT_DATE)::date + 4, 'MANHA', 1, 9, 14),
+    (DATE_TRUNC('month', CURRENT_DATE)::date + 4, 'TARDE', 2, 10, 15),
+    (DATE_TRUNC('month', CURRENT_DATE)::date + 5, 'NOITE', 1, 7, 11),
+    (DATE_TRUNC('month', CURRENT_DATE)::date + 6, 'MANHA', 3, 8, 12),
+    (DATE_TRUNC('month', CURRENT_DATE)::date + 7, 'TARDE', 1, 9, 13);

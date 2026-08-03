@@ -1,6 +1,13 @@
 
 -- REMOÇÃO DAS TABELAS
+-- internacao e auditoria_atendimento são criadas em etapa2/alteracoes.sql, mas
+-- precisam entrar aqui: este é o script que zera o banco, e numa segunda
+-- subida sem `down -v` elas sobrevivem ao DROP das tabelas base, fazendo
+-- alteracoes.sql abortar (CREATE TABLE sem IF NOT EXISTS) e o db-init nunca
+-- chegar a procedures.sql/triggers.sql/views.sql.
 DROP TABLE IF EXISTS
+    internacao,
+    auditoria_atendimento,
     paciente_alergia,
     procedimento_realizado,
     escala,

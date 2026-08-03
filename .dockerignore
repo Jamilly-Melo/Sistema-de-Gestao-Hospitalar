@@ -1,0 +1,25 @@
+# Ambiente virtual do host. O Dockerfile roda `uv sync --frozen` e cria o venv
+# do container; sem esta linha o `COPY . ./` seguinte copia o .venv do Windows
+# por cima, com binários e caminhos que não valem no Linux.
+.venv/
+
+# Histórico do git — a imagem não precisa dele, e é a maior parte do contexto.
+.git/
+.gitignore
+
+# Caches gerados por Python e pytest no host. O prefixo `**/` é obrigatório:
+# diferente do .gitignore, aqui `__pycache__/` casaria só na raiz do contexto, e
+# o bytecode compilado no Windows entraria na imagem — o Python prefere o .pyc
+# ao .py quando o mtime bate, então o container roda código velho e falha de um
+# jeito que não se reproduz no host.
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+
+# Entregáveis em PDF da disciplina: material da entrega, não da aplicação.
+documentacao/
+
+# node_modules/.next do host (Windows) não servem para o build da imagem `api`/
+# `testes` (contexto "."), e o Dockerfile.api/dockerfile não usam nada de web/.
+web/node_modules/
+web/.next/

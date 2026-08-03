@@ -4,6 +4,15 @@
 -- Recebe os dados do atendimento e uma lista JSONB de procedimentos realizados.
 -- Caso qualquer inserção falhe, o CALL inteiro falha e a transação executada pela aplicação deve ser revertida.
 
+-- Remove a versão antiga (7 argumentos, sem INOUT p_id_atendimento) antes do
+-- CREATE OR REPLACE abaixo: o Postgres casa CREATE OR REPLACE PROCEDURE pela
+-- assinatura de tipos dos parâmetros, então em qualquer banco que já tinha a
+-- versão de 7 argumentos (volume não recriado entre a versão antiga e esta),
+-- o CREATE OR REPLACE com 8 argumentos criaria uma segunda procedure
+-- sobrecarregada em vez de substituir a primeira. Sem efeito (no-op) em
+-- bancos que nunca tiveram a versão antiga.
+DROP PROCEDURE IF EXISTS sp_registrar_atendimento_completo(TIMESTAMP, INT, INT, INT, INT, INT, JSONB);
+
 CREATE OR REPLACE PROCEDURE sp_registrar_atendimento_completo(
     IN p_data_hora TIMESTAMP,
     IN p_duracao_minutos INT,
@@ -11,7 +20,8 @@ CREATE OR REPLACE PROCEDURE sp_registrar_atendimento_completo(
     IN p_id_residente INT,
     IN p_id_preceptor INT,
     IN p_id_unidade INT,
-    IN p_procedimentos JSONB
+    IN p_procedimentos JSONB,
+    INOUT p_id_atendimento INT DEFAULT NULL
 )
 LANGUAGE plpgsql
 AS $$
@@ -110,6 +120,8 @@ BEGIN
             v_data_hora_inicio
         );
     END LOOP;
+
+    p_id_atendimento := v_id_atendimento;
 
     RAISE NOTICE
         'Atendimento % registrado com sucesso.',
