@@ -1,0 +1,100 @@
+"""Consultas avançadas — item 5 da Etapa 2.
+
+Módulo separado de propósito: `basicas.py`, `analiticas.py`, `etapa2.py` e
+`crud.py` são artefato da entrega já avaliada e não devem ser alterados.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from sqlalchemy import Numeric, case, cast, desc, func, select
+from sqlalchemy.orm import Session, aliased
+
+from sgh.database import fetch_all
+from sgh.models import (
+    Atendimento,
+    Paciente,
+    Pessoa,
+    Preceptor,
+    Procedimento,
+    ProcedimentoRealizado,
+    Profissional,
+    Residente,
+)
+
+
+def preceptores_de_pacientes_flamenguistas(
+    *, session: Session | None = None
+) -> list[dict[str, Any]]:
+    """Preceptores que supervisionaram atendimentos de pacientes flamenguistas.
+
+    `Pessoa` entra duas vezes na consulta — uma para o nome do preceptor, outra
+    para o `is_flamengo` do paciente —, por isso os dois `aliased()`. Sem eles o
+    SQLAlchemy não saberia a qual das duas cada coluna se refere.
+
+    O `distinct()` é necessário porque o JOIN com `atendimento` multiplica o
+    preceptor por atendimento qualificante.
+    """
+    pessoa_preceptor = aliased(Pessoa)
+    pessoa_paciente = aliased(Pessoa)
+
+    stmt = (
+        select(
+            pessoa_preceptor.nome.label("preceptor"),
+            Preceptor.titulacao.label("titulacao"),
+        )
+        .select_from(Preceptor)
+        .join(Profissional, Profissional.id_pessoa == Preceptor.id_profissional)
+        .join(pessoa_preceptor, pessoa_preceptor.id_pessoa == Profissional.id_pessoa)
+        .join(Atendimento, Atendimento.id_preceptor == Preceptor.id_profissional)
+        .join(Paciente, Paciente.id_pessoa == Atendimento.id_paciente)
+        .join(pessoa_paciente, pessoa_paciente.id_pessoa == Paciente.id_pessoa)
+        .where(pessoa_paciente.is_flamengo.is_(True))
+        .distinct()
+        .order_by(pessoa_preceptor.nome.asc())
+    )
+    return fetch_all(stmt, session=session)
+
+
+def percentual_procedimentos_risco_alto(
+    *, session: Session | None = None
+) -> list[dict[str, Any]]:
+    """Percentual de procedimentos de risco ALTO realizados por cada residente.
+
+    Os `outerjoin` encadeados mantêm na saída o residente que nunca atendeu
+    (o seed tem um). Para ele o total é 0, e `nullif(total, 0)` transforma a
+    divisão em NULL em vez de estourar — o `coalesce` externo devolve 0.
+
+    O `cast` para Numeric é necessário porque `count()` devolve inteiro no
+    Postgres, e inteiro dividido por inteiro trunca.
+    """
+    total = func.count(ProcedimentoRealizado.id_procedimento)
+    alto = func.count(case((Procedimento.nivel_risco == "ALTO", 1)))
+    percentual = func.coalesce(
+        func.round(cast(alto, Numeric) * 100 / func.nullif(total, 0), 1), 0
+    )
+
+    stmt = (
+        select(
+            Pessoa.nome.label("residente"),
+            total.label("total_procedimentos"),
+            alto.label("procedimentos_risco_alto"),
+            percentual.label("percentual_risco_alto"),
+        )
+        .select_from(Residente)
+        .join(Profissional, Profissional.id_pessoa == Residente.id_profissional)
+        .join(Pessoa, Pessoa.id_pessoa == Profissional.id_pessoa)
+        .outerjoin(Atendimento, Atendimento.id_residente == Residente.id_profissional)
+        .outerjoin(
+            ProcedimentoRealizado,
+            ProcedimentoRealizado.id_atendimento == Atendimento.id_atendimento,
+        )
+        .outerjoin(
+            Procedimento,
+            Procedimento.id_procedimento == ProcedimentoRealizado.id_procedimento,
+        )
+        .group_by(Residente.id_profissional, Pessoa.nome)
+        .order_by(desc("percentual_risco_alto"), Pessoa.nome.asc())
+    )
+    return fetch_all(stmt, session=session)
