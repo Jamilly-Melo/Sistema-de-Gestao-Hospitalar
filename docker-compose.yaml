@@ -37,6 +37,7 @@ services:
       "-f", "/docker-entrypoint-initdb.d/criacao_tabela.sql",
       "-f", "/docker-entrypoint-initdb.d/insercao_dados.sql",
       "-f", "/docker-entrypoint-initdb.d/etapa2/alteracoes.sql",
+      "-f", "/docker-entrypoint-initdb.d/etapa2/insercao_internacoes.sql",
       "-f", "/docker-entrypoint-initdb.d/etapa2/procedures.sql",
       "-f", "/docker-entrypoint-initdb.d/etapa2/triggers.sql",
       "-f", "/docker-entrypoint-initdb.d/etapa2/views.sql"
