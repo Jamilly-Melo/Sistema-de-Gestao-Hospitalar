@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from sgh.database import fetch_all
 from sgh.models import (
     Atendimento,
+    Escala,
     Paciente,
     Pessoa,
     Preceptor,
@@ -119,5 +120,30 @@ def listar_pacientes_com_ultimo_atendimento(
         .outerjoin(Atendimento, Atendimento.id_paciente == Paciente.id_pessoa)
         .group_by(Pessoa.id_pessoa, Pessoa.nome)
         .order_by(Pessoa.nome.asc())
+    )
+    return fetch_all(stmt, session=session)
+
+
+def plantoes_do_residente(
+    id_residente: int, *, session: Session | None = None
+) -> list[dict[str, Any]]:
+    """Plantões escalados de um residente, para popular o campo de origem do
+    reajuste de escala.
+
+    Existe para a tela poder oferecer os plantões que o residente de fato tem,
+    em vez de pedir data e turno digitados — que falham silenciosamente quando
+    não existe plantão naquela combinação.
+    """
+    stmt = (
+        select(
+            Escala.id_escala,
+            Escala.data_plantao,
+            Escala.turno,
+            Unidade.nome.label("unidade"),
+        )
+        .select_from(Escala)
+        .join(Unidade, Unidade.id_unidade == Escala.id_unidade)
+        .where(Escala.id_residente == id_residente)
+        .order_by(Escala.data_plantao.asc(), Escala.turno.asc())
     )
     return fetch_all(stmt, session=session)

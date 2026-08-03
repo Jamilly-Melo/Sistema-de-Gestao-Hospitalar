@@ -75,3 +75,56 @@ def test_listar_pacientes_com_ultimo_atendimento_cobre_todos_os_pacientes():
     assert len(lookups.listar_pacientes_com_ultimo_atendimento()) == len(
         lookups.listar_pacientes()
     )
+
+
+def test_plantoes_do_residente_traz_data_turno_e_unidade():
+    from sgh.queries import basicas
+
+    residentes = basicas.media_atendimentos_por_residente()
+    assert residentes, "o seed deveria ter residentes"
+
+    com_plantao = []
+    for residente in residentes:
+        linhas = lookups.plantoes_do_residente(residente["id"])
+        for linha in linhas:
+            assert set(linha) == {"id_escala", "data_plantao", "turno", "unidade"}
+            assert linha["turno"] in {"MANHA", "TARDE", "NOITE"}
+        if linhas:
+            com_plantao.append(residente["id"])
+
+    assert com_plantao, "algum residente do seed deveria ter plantão"
+
+
+def test_plantoes_do_residente_sem_plantao_devolve_lista_vazia():
+    """O seed tem um residente sem nenhum plantão — a tela precisa lidar com
+    isso sem quebrar."""
+    from sgh.queries import basicas
+
+    vazios = [
+        r["id"]
+        for r in basicas.media_atendimentos_por_residente()
+        if not lookups.plantoes_do_residente(r["id"])
+    ]
+    assert vazios, "o seed deveria ter residente sem plantão"
+
+
+def test_plantoes_do_residente_inexistente_devolve_lista_vazia():
+    assert lookups.plantoes_do_residente(999999) == []
+
+
+def test_plantoes_do_residente_filtra_pelo_residente_pedido():
+    """Somando os plantões de todos os residentes chega-se ao total de escalas."""
+    from sgh.database import SessionLocal
+    from sgh.models import Escala
+    from sqlalchemy import func, select
+
+    from sgh.queries import basicas
+
+    with SessionLocal() as sessao:
+        total = sessao.execute(select(func.count(Escala.id_escala))).scalar_one()
+
+    soma = sum(
+        len(lookups.plantoes_do_residente(r["id"]))
+        for r in basicas.media_atendimentos_por_residente()
+    )
+    assert soma == total

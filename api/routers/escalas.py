@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from api.dependencies import get_session
 from api.schemas.escalas import ReajustarEscalaRequest
-from sgh.queries import analiticas, etapa2
+from sgh.queries import analiticas, etapa2, lookups
 
 router = APIRouter(prefix="/escalas", tags=["escalas"])
 
@@ -18,6 +18,13 @@ router = APIRouter(prefix="/escalas", tags=["escalas"])
 def listar(session: Session = Depends(get_session)) -> list[dict[str, Any]]:
     """Painel mensal de plantões por residente e unidade (mês corrente)."""
     return analiticas.plantoes_por_residente_nas_unidades(session=session)
+
+
+@router.get("/residente/{id_residente}")
+def plantoes_do_residente(
+    id_residente: int, session: Session = Depends(get_session)
+) -> list[dict[str, Any]]:
+    return lookups.plantoes_do_residente(id_residente, session=session)
 
 
 @router.post("/reajustar")
