@@ -102,34 +102,25 @@ def procedimentos_do_atendimento(
 def listar_pacientes_com_ultimo_atendimento(
     *, session: Session | None = None
 ) -> list[dict[str, Any]]:
-    """Pacientes com id, nome e o ultimo atendimento de cada um: data, equipe
-    e procedimentos realizados.
+    """Uma linha por paciente, com o ultimo atendimento: data, equipe e
+    procedimentos.
 
-    A tela de pacientes precisa do id para abrir a edicao; a consulta basica
-    `atendimentos_do_paciente` devolve so nome + data_hora, e uma linha por
-    atendimento em vez de uma por paciente.
+    `DISTINCT ON` em vez de `max(data_hora)` porque a tela precisa do residente
+    e do preceptor **daquele** atendimento, e o max devolve so a data.
 
-    `DISTINCT ON` devolve a **linha inteira** do atendimento mais recente de
-    cada paciente. `max(data_hora)` daria so a data, sem caminho para chegar ao
-    residente e ao preceptor daquele atendimento especifico.
+    `array_remove` limpa o NULL que `array_agg` produz para o paciente sem
+    atendimento, para a lista vir vazia em vez de `[None]`.
 
-    Os `outerjoin` mantem na saida o paciente que nunca foi atendido (o seed tem
-    um): para ele data_hora, residente e preceptor vem NULL. `array_remove`
-    limpa o NULL que `array_agg` produz quando nao ha procedimento, para a lista
-    vir vazia em vez de `[None]`.
-
-    A consulta avaliada `avancadas.ultimo_atendimento_por_paciente` responde a
-    mesma pergunta navegando pelos relationship() com eager loading. As duas
-    coexistem de proposito: aquela demonstra o ORM para a Etapa 2, esta serve a
-    tela e devolve o id que a tela precisa. `tests/test_lookups.py` afirma que
+    `avancadas.ultimo_atendimento_por_paciente` responde a mesma pergunta pelo
+    ORM com eager loading; as duas coexistem porque aquela e artefato avaliado e
+    nao devolve o id que a tela usa. `tests/test_lookups.py` afirma que
     concordam.
     """
     pessoa_residente = aliased(Pessoa)
     pessoa_preceptor = aliased(Pessoa)
 
-    # Residente e Preceptor tem o mesmo id que Profissional, que tem o mesmo id
-    # que Pessoa (a chave e propagada pelas FKs), entao da para ir direto de
-    # id_residente/id_preceptor a Pessoa sem passar pelas tabelas do meio.
+    # Residente, Profissional e Pessoa compartilham o mesmo id (a chave e
+    # propagada pelas FKs), entao da para ir direto de id_residente a Pessoa.
     ultimo = (
         select(
             Atendimento.id_atendimento,

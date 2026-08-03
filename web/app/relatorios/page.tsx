@@ -57,12 +57,9 @@ function formatarDuracao(texto: string): string | null {
   return pedacos.length > 0 ? pedacos.join(" ") : "0min";
 }
 
-// As consultas devolvem os nomes de coluna do banco (snake_case), e algumas são
-// ambíguas fora do contexto do SQL. O caso que motivou isto: "titulacao", no
-// relatório de residentes sem supervisor, é a titulação do PRECEPTOR, não do
-// residente — a view filtra por `pc.titulacao NOT IN ('DOUTOR', 'POS_DOUTOR')`.
-// A view é artefato da entrega avaliada e não muda; o rótulo é de exibição.
-// Chave fora do mapa aparece crua: feio, mas honesto.
+// As colunas chegam com o nome do banco (snake_case) e algumas enganam fora do
+// contexto do SQL: "titulacao" é a do PRECEPTOR, não a do residente — a view
+// filtra por `pc.titulacao NOT IN ('DOUTOR', 'POS_DOUTOR')`.
 const ROTULOS_COLUNA: Record<string, string> = {
   data_hora: "Data/hora",
   data_hora_entrada: "Entrada",
@@ -100,8 +97,6 @@ function rotuloDaColuna(chave: string): string {
   return ROTULOS_COLUNA[chave] ?? chave;
 }
 
-// Mostra qual item da Etapa 2 o relatório demonstra — serve à apresentação da
-// disciplina: dá para ver "View" ou "Stored procedure" sem ler o código.
 function EtiquetaTecnica({ tecnica }: { tecnica: string }) {
   return (
     <span className="rounded-md border bg-muted px-2 py-0.5 text-xs font-medium whitespace-nowrap">
@@ -110,9 +105,7 @@ function EtiquetaTecnica({ tecnica }: { tecnica: string }) {
   );
 }
 
-// O resultado de um relatório é uma lista de objetos com formato desconhecido em
-// tempo de compilação — o catálogo é dinâmico. Esta função é a única que decide
-// como cada valor vira texto.
+// O catálogo é dinâmico, então o formato do resultado só se conhece em runtime.
 function celula(valor: unknown): string {
   if (valor === null || valor === undefined) return "—";
   // "Último atendimento por paciente" traz `procedimentos` como array.

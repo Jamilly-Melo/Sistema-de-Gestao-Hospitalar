@@ -17,11 +17,9 @@ from sqlalchemy.orm import selectinload
 from sgh.database import SessionLocal, engine
 from sgh.models import Atendimento, Paciente
 
-# Uma query para os pacientes, uma para todos os atendimentos e uma para todos
-# os procedimentos: `selectinload` emite uma por nível de relacionamento,
-# independente de quantos pacientes existem. Valor medido na implementação — se
-# o teste falhar depois de uma atualização do SQLAlchemy, reconfira o número
-# observado em vez de trocar a igualdade por uma desigualdade frouxa.
+# Uma query por nível: pacientes, atendimentos, procedimentos. Se este número
+# mudar, reconfira o valor observado em vez de afrouxar para uma desigualdade —
+# a igualdade é o que faz uma regressão de N+1 quebrar o build.
 QUERIES_EAGER_ESPERADAS = 3
 
 

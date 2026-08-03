@@ -1,4 +1,3 @@
-// web/app/escalas/page.tsx
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { PageContainer } from "@/components/PageContainer";

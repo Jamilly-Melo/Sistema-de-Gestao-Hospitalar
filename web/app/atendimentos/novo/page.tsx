@@ -51,9 +51,8 @@ export default function NovoAtendimentoPage() {
     evento.preventDefault();
     setErro(null);
 
-    // Sem isto, submeter com campo vazio manda `null` num campo que a API exige
-    // como inteiro e volta um 422 — tecnicamente correto, mas o usuário só
-    // descobre o que faltou depois de tentar. Melhor dizer antes.
+    // Sem isto o campo vazio vira um 422 da API, e o usuário só descobre o que
+    // faltou depois de tentar.
     const faltando = [
       [idPaciente, "Paciente"],
       [idResidente, "Residente"],

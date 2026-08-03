@@ -23,8 +23,6 @@ type Linha = {
   procedimentos: string[];
 };
 
-// Paciente sem atendimento vem com equipe nula e lista vazia — o traço deixa
-// isso explícito em vez de uma célula em branco, que parece dado faltando.
 function ou(valor: string | null): string {
   return valor ?? "—";
 }
