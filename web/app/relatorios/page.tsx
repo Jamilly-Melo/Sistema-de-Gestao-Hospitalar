@@ -31,6 +31,31 @@ type Relatorio = {
   params: { name: string; label: string; type: string }[];
 };
 
+// Um INTERVAL do Postgres chega aqui como duração ISO 8601 — o Pydantic
+// serializa o timedelta assim. "PT15M" é P(eríodo) T(empo) 15 M(inutos), o que
+// é correto mas ilegível na tela. Acontece com "Tempo médio de espera".
+const DURACAO_ISO = /^P(?:(\d+)D)?T(?:(\d+)H)?(?:(\d+)M)?(?:([\d.]+)S)?$/;
+
+function formatarDuracao(texto: string): string | null {
+  const partes = DURACAO_ISO.exec(texto);
+  if (!partes) return null;
+
+  const [, dias, horas, minutos, segundos] = partes;
+  // Todos os grupos são opcionais no padrão, então a string "PT" casaria sem
+  // trazer unidade nenhuma. Sem isso, um texto qualquer viraria uma duração.
+  if (!dias && !horas && !minutos && !segundos) return null;
+
+  // Componente zerado não vira texto ("1h 0min" é ruído), exceto quando é o
+  // único que existe — aí "0min" é a resposta certa.
+  const pedacos: string[] = [];
+  if (Number(dias) > 0) pedacos.push(`${Number(dias)}d`);
+  if (Number(horas) > 0) pedacos.push(`${Number(horas)}h`);
+  if (Number(minutos) > 0) pedacos.push(`${Number(minutos)}min`);
+  if (Number(segundos) > 0) pedacos.push(`${Number(segundos)}s`);
+
+  return pedacos.length > 0 ? pedacos.join(" ") : "0min";
+}
+
 // O resultado de um relatório é uma lista de objetos com formato desconhecido em
 // tempo de compilação — o catálogo é dinâmico. Esta função é a única que decide
 // como cada valor vira texto.
@@ -39,6 +64,12 @@ function celula(valor: unknown): string {
   // "Último atendimento por paciente" traz `procedimentos` como array.
   if (Array.isArray(valor)) return valor.length > 0 ? valor.join(", ") : "—";
   if (typeof valor === "object") return JSON.stringify(valor);
+
+  if (typeof valor === "string") {
+    const duracao = formatarDuracao(valor);
+    if (duracao !== null) return duracao;
+  }
+
   return String(valor);
 }
 
