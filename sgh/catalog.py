@@ -38,12 +38,14 @@ CATALOGO: dict[str, dict[str, dict[str, Any]]] = {
             "description": "Pacientes que nunca realizaram procedimento de risco ALTO.",
             "params": [],
             "mutates": False,
+            "tecnica": "ORM",
             "fn": analiticas.pacientes_sem_procedimento_risco_alto,
         },
         "Plantões por residente nas unidades": {
             "description": "Plantões escalados por residente no mês corrente, por unidade.",
             "params": [],
             "mutates": False,
+            "tecnica": "ORM",
             "fn": analiticas.plantoes_por_residente_nas_unidades,
         },
         "Preceptores que supervisionaram": {
@@ -63,12 +65,14 @@ CATALOGO: dict[str, dict[str, dict[str, Any]]] = {
                 },
             ],
             "mutates": False,
+            "tecnica": "ORM",
             "fn": analiticas.preceptores_que_supervisionaram,
         },
         "Ranking de residentes": {
             "description": "Ranking dos residentes por número de atendimentos.",
             "params": [],
             "mutates": False,
+            "tecnica": "ORM",
             "fn": analiticas.ranking_residentes,
         },
     },
@@ -155,6 +159,7 @@ CATALOGO: dict[str, dict[str, dict[str, Any]]] = {
             "description": "Pacientes atualmente internados (sem alta), com unidade.",
             "params": [],
             "mutates": False,
+            "tecnica": "View",
             "fn": etapa2.pacientes_internados,
         },
         "Residentes sem supervisor adequado": {
@@ -164,6 +169,7 @@ CATALOGO: dict[str, dict[str, dict[str, Any]]] = {
             ),
             "params": [],
             "mutates": False,
+            "tecnica": "View",
             "fn": etapa2.residentes_sem_supervisor,
         },
         "Estatísticas mensais de atendimentos": {
@@ -173,6 +179,7 @@ CATALOGO: dict[str, dict[str, dict[str, Any]]] = {
             ),
             "params": [],
             "mutates": False,
+            "tecnica": "View",
             "fn": etapa2.estatisticas_atendimentos_mensal,
         },
         "Tempo médio de espera": {
@@ -182,6 +189,7 @@ CATALOGO: dict[str, dict[str, dict[str, Any]]] = {
             ),
             "params": [],
             "mutates": False,
+            "tecnica": "Stored procedure",
             "fn": etapa2.tempo_medio_espera,
         },
     },
@@ -193,6 +201,7 @@ CATALOGO: dict[str, dict[str, dict[str, Any]]] = {
             ),
             "params": [],
             "mutates": False,
+            "tecnica": "ORM",
             "fn": avancadas.preceptores_de_pacientes_flamenguistas,
         },
         "Último atendimento por paciente": {
@@ -203,6 +212,7 @@ CATALOGO: dict[str, dict[str, dict[str, Any]]] = {
             ),
             "params": [],
             "mutates": False,
+            "tecnica": "ORM + eager loading",
             "fn": avancadas.ultimo_atendimento_por_paciente,
         },
         "Percentual de procedimentos de risco alto": {
@@ -212,6 +222,7 @@ CATALOGO: dict[str, dict[str, dict[str, Any]]] = {
             ),
             "params": [],
             "mutates": False,
+            "tecnica": "ORM",
             "fn": avancadas.percentual_procedimentos_risco_alto,
         },
     },

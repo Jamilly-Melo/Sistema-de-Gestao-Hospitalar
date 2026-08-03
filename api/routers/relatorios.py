@@ -25,7 +25,12 @@ def _entradas_de_relatorio() -> dict[str, dict[str, Any]]:
 @router.get("")
 def listar() -> list[dict[str, Any]]:
     return [
-        {"nome": nome, "description": entrada["description"], "params": entrada["params"]}
+        {
+            "nome": nome,
+            "description": entrada["description"],
+            "params": entrada["params"],
+            "tecnica": entrada["tecnica"],
+        }
         for nome, entrada in _entradas_de_relatorio().items()
     ]
 

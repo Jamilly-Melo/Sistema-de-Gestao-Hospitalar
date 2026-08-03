@@ -100,3 +100,37 @@ def test_consultas_avancadas_estao_expostas_como_relatorio():
         assert entrada["mutates"] is False
         assert entrada["params"] == []
         assert callable(entrada["fn"])
+
+
+def test_toda_entrada_de_relatorio_declara_a_tecnica():
+    """A tela mostra qual item da Etapa 2 cada relatório demonstra."""
+    from sgh.catalog import CATALOGO, CATEGORIAS_RELATORIO
+
+    tecnicas_validas = {"ORM", "ORM + eager loading", "View", "Stored procedure"}
+    for categoria in CATEGORIAS_RELATORIO:
+        for nome, entrada in CATALOGO[categoria].items():
+            assert "tecnica" in entrada, f"{nome} não declara tecnica"
+            assert entrada["tecnica"] in tecnicas_validas, (
+                f"{nome} declara tecnica inesperada: {entrada['tecnica']}"
+            )
+
+
+def test_tecnicas_batem_com_a_implementacao_real():
+    """View e procedure são as de etapa2.py; eager loading é a consulta que usa
+    selectinload. Se uma consulta mudar de técnica, este teste avisa."""
+    from sgh.catalog import CATALOGO
+
+    esperado = {
+        "Pacientes internados": "View",
+        "Residentes sem supervisor adequado": "View",
+        "Estatísticas mensais de atendimentos": "View",
+        "Tempo médio de espera": "Stored procedure",
+        "Último atendimento por paciente": "ORM + eager loading",
+    }
+    encontrado = {}
+    for categoria in ("Etapa 2", "Consultas avançadas"):
+        for nome, entrada in CATALOGO[categoria].items():
+            if nome in esperado:
+                encontrado[nome] = entrada["tecnica"]
+
+    assert encontrado == esperado

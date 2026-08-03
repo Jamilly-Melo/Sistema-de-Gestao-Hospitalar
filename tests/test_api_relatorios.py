@@ -30,3 +30,14 @@ def test_executar_relatorio_com_parametros(cliente_api):
 def test_executar_relatorio_inexistente_devolve_404(cliente_api):
     resposta = cliente_api.post("/relatorios/Não existe", json={})
     assert resposta.status_code == 404
+
+
+def test_listar_relatorios_expoe_a_tecnica(cliente_api):
+    resposta = cliente_api.get("/relatorios")
+    assert resposta.status_code == 200
+
+    corpo = resposta.json()
+    assert corpo, "deveria haver relatórios"
+    for item in corpo:
+        assert set(item) == {"nome", "description", "params", "tecnica"}
+        assert isinstance(item["tecnica"], str) and item["tecnica"]
