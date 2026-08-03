@@ -14,7 +14,20 @@ import {
 } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-type Linha = { id_pessoa: number; nome: string; data_hora: string | null };
+type Linha = {
+  id_pessoa: number;
+  nome: string;
+  data_hora: string | null;
+  residente: string | null;
+  preceptor: string | null;
+  procedimentos: string[];
+};
+
+// Paciente sem atendimento vem com equipe nula e lista vazia — o traço deixa
+// isso explícito em vez de uma célula em branco, que parece dado faltando.
+function ou(valor: string | null): string {
+  return valor ?? "—";
+}
 
 export default async function PacientesPage({
   searchParams,
@@ -51,6 +64,9 @@ export default async function PacientesPage({
                 <TableRow>
                   <TableHead>Nome</TableHead>
                   <TableHead>Último atendimento</TableHead>
+                  <TableHead>Residente</TableHead>
+                  <TableHead>Preceptor</TableHead>
+                  <TableHead>Procedimentos</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -58,7 +74,14 @@ export default async function PacientesPage({
                 {linhas.map((linha) => (
                   <TableRow key={linha.id_pessoa}>
                     <TableCell>{linha.nome}</TableCell>
-                    <TableCell>{linha.data_hora ?? "—"}</TableCell>
+                    <TableCell>{ou(linha.data_hora)}</TableCell>
+                    <TableCell>{ou(linha.residente)}</TableCell>
+                    <TableCell>{ou(linha.preceptor)}</TableCell>
+                    <TableCell>
+                      {linha.procedimentos.length > 0
+                        ? linha.procedimentos.join(", ")
+                        : "—"}
+                    </TableCell>
                     <TableCell className="text-right">
                       <Link
                         href={`/pacientes/${linha.id_pessoa}`}

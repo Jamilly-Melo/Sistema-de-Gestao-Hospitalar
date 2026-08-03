@@ -15,7 +15,7 @@ from __future__ import annotations
 from typing import Any
 
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
 from sgh.database import fetch_all
 from sgh.models import (
@@ -102,23 +102,82 @@ def procedimentos_do_atendimento(
 def listar_pacientes_com_ultimo_atendimento(
     *, session: Session | None = None
 ) -> list[dict[str, Any]]:
-    """Pacientes com id, nome e data do ultimo atendimento.
+    """Pacientes com id, nome e o ultimo atendimento de cada um: data, equipe
+    e procedimentos realizados.
 
     A tela de pacientes precisa do id para abrir a edicao; a consulta basica
-    `atendimentos_do_paciente` devolve so nome + data_hora. O LEFT JOIN mantem
-    quem nunca foi atendido (data_hora vem NULL), e o GROUP BY garante uma
-    linha por paciente — a consulta basica devolve uma linha por atendimento.
+    `atendimentos_do_paciente` devolve so nome + data_hora, e uma linha por
+    atendimento em vez de uma por paciente.
+
+    `DISTINCT ON` devolve a **linha inteira** do atendimento mais recente de
+    cada paciente. `max(data_hora)` daria so a data, sem caminho para chegar ao
+    residente e ao preceptor daquele atendimento especifico.
+
+    Os `outerjoin` mantem na saida o paciente que nunca foi atendido (o seed tem
+    um): para ele data_hora, residente e preceptor vem NULL. `array_remove`
+    limpa o NULL que `array_agg` produz quando nao ha procedimento, para a lista
+    vir vazia em vez de `[None]`.
+
+    A consulta avaliada `avancadas.ultimo_atendimento_por_paciente` responde a
+    mesma pergunta navegando pelos relationship() com eager loading. As duas
+    coexistem de proposito: aquela demonstra o ORM para a Etapa 2, esta serve a
+    tela e devolve o id que a tela precisa. `tests/test_lookups.py` afirma que
+    concordam.
     """
+    pessoa_residente = aliased(Pessoa)
+    pessoa_preceptor = aliased(Pessoa)
+
+    # Residente e Preceptor tem o mesmo id que Profissional, que tem o mesmo id
+    # que Pessoa (a chave e propagada pelas FKs), entao da para ir direto de
+    # id_residente/id_preceptor a Pessoa sem passar pelas tabelas do meio.
+    ultimo = (
+        select(
+            Atendimento.id_atendimento,
+            Atendimento.id_paciente,
+            Atendimento.data_hora,
+            Atendimento.id_residente,
+            Atendimento.id_preceptor,
+        )
+        .distinct(Atendimento.id_paciente)
+        .order_by(Atendimento.id_paciente, Atendimento.data_hora.desc())
+        .subquery()
+    )
+
     stmt = (
         select(
             Pessoa.id_pessoa,
             Pessoa.nome,
-            func.max(Atendimento.data_hora).label("data_hora"),
+            ultimo.c.data_hora,
+            pessoa_residente.nome.label("residente"),
+            pessoa_preceptor.nome.label("preceptor"),
+            func.array_remove(func.array_agg(Procedimento.nome), None).label(
+                "procedimentos"
+            ),
         )
         .select_from(Paciente)
         .join(Pessoa, Pessoa.id_pessoa == Paciente.id_pessoa)
-        .outerjoin(Atendimento, Atendimento.id_paciente == Paciente.id_pessoa)
-        .group_by(Pessoa.id_pessoa, Pessoa.nome)
+        .outerjoin(ultimo, ultimo.c.id_paciente == Paciente.id_pessoa)
+        .outerjoin(
+            pessoa_residente, pessoa_residente.id_pessoa == ultimo.c.id_residente
+        )
+        .outerjoin(
+            pessoa_preceptor, pessoa_preceptor.id_pessoa == ultimo.c.id_preceptor
+        )
+        .outerjoin(
+            ProcedimentoRealizado,
+            ProcedimentoRealizado.id_atendimento == ultimo.c.id_atendimento,
+        )
+        .outerjoin(
+            Procedimento,
+            Procedimento.id_procedimento == ProcedimentoRealizado.id_procedimento,
+        )
+        .group_by(
+            Pessoa.id_pessoa,
+            Pessoa.nome,
+            ultimo.c.data_hora,
+            pessoa_residente.nome,
+            pessoa_preceptor.nome,
+        )
         .order_by(Pessoa.nome.asc())
     )
     return fetch_all(stmt, session=session)

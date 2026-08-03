@@ -68,13 +68,71 @@ def test_listar_pacientes_com_ultimo_atendimento_traz_id_e_uma_linha_por_pacient
     assert ids, "deveria haver pacientes no seed"
     assert len(ids) == len(set(ids)), "um paciente não pode aparecer duas vezes"
     for linha in linhas:
-        assert set(linha) == {"id_pessoa", "nome", "data_hora"}
+        assert set(linha) == {
+            "id_pessoa",
+            "nome",
+            "data_hora",
+            "residente",
+            "preceptor",
+            "procedimentos",
+        }
 
 
 def test_listar_pacientes_com_ultimo_atendimento_cobre_todos_os_pacientes():
     assert len(lookups.listar_pacientes_com_ultimo_atendimento()) == len(
         lookups.listar_pacientes()
     )
+
+
+def test_listar_pacientes_traz_equipe_e_procedimentos_do_ultimo_atendimento():
+    """A tela mostra quem atendeu e o que foi feito, não só a data."""
+    atendidos = [
+        linha
+        for linha in lookups.listar_pacientes_com_ultimo_atendimento()
+        if linha["data_hora"] is not None
+    ]
+    assert atendidos, "o seed tem pacientes atendidos"
+
+    for linha in atendidos:
+        assert isinstance(linha["residente"], str) and linha["residente"]
+        assert isinstance(linha["preceptor"], str) and linha["preceptor"]
+        assert isinstance(linha["procedimentos"], list)
+        assert all(isinstance(nome, str) for nome in linha["procedimentos"])
+
+    assert any(len(linha["procedimentos"]) > 1 for linha in atendidos), (
+        "o seed tem atendimento com mais de um procedimento"
+    )
+
+
+def test_paciente_sem_atendimento_vem_com_equipe_nula_e_lista_vazia():
+    sem = [
+        linha
+        for linha in lookups.listar_pacientes_com_ultimo_atendimento()
+        if linha["data_hora"] is None
+    ]
+    assert sem, "o seed tem um paciente sem atendimento"
+
+    for linha in sem:
+        assert linha["residente"] is None
+        assert linha["preceptor"] is None
+        assert linha["procedimentos"] == []
+
+
+def test_ultimo_atendimento_da_tela_bate_com_a_consulta_avancada():
+    """A consulta de apoio (SQL plano) e a avaliada (ORM com eager loading)
+    respondem a mesma pergunta por caminhos diferentes — devem concordar."""
+    from sgh.queries import avancadas
+
+    da_tela = {
+        linha["nome"]: linha
+        for linha in lookups.listar_pacientes_com_ultimo_atendimento()
+    }
+    for linha in avancadas.ultimo_atendimento_por_paciente():
+        equivalente = da_tela[linha["paciente"]]
+        assert equivalente["data_hora"] == linha["data_hora"]
+        assert equivalente["residente"] == linha["residente"]
+        assert equivalente["preceptor"] == linha["preceptor"]
+        assert sorted(equivalente["procedimentos"]) == sorted(linha["procedimentos"])
 
 
 def test_plantoes_do_residente_traz_data_turno_e_unidade():
