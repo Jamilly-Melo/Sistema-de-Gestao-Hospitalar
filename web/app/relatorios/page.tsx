@@ -16,12 +16,31 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type Relatorio = {
   nome: string;
   description: string;
   params: { name: string; label: string; type: string }[];
 };
+
+// O resultado de um relatório é uma lista de objetos com formato desconhecido em
+// tempo de compilação — o catálogo é dinâmico. Esta função é a única que decide
+// como cada valor vira texto.
+function celula(valor: unknown): string {
+  if (valor === null || valor === undefined) return "—";
+  // "Último atendimento por paciente" traz `procedimentos` como array.
+  if (Array.isArray(valor)) return valor.length > 0 ? valor.join(", ") : "—";
+  if (typeof valor === "object") return JSON.stringify(valor);
+  return String(valor);
+}
 
 export default function RelatoriosPage() {
   const [relatorios, setRelatorios] = useState<Relatorio[]>([]);
@@ -54,7 +73,7 @@ export default function RelatoriosPage() {
   return (
     <PageContainer>
       <PageHeader titulo="Relatórios" descricao="Consultas analíticas sobre atendimentos, escalas e pacientes." />
-      <Card className="max-w-md">
+      <Card className="max-w-5xl">
         <CardHeader>
           <CardTitle>Executar relatório</CardTitle>
         </CardHeader>
@@ -110,11 +129,31 @@ export default function RelatoriosPage() {
             </Alert>
           )}
 
-          {resultado && (
-            <pre className="overflow-x-auto rounded-md bg-muted p-4 text-sm">
-              {JSON.stringify(resultado, null, 2)}
-            </pre>
-          )}
+          {resultado &&
+            (resultado.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                A consulta não retornou nenhuma linha.
+              </p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {Object.keys(resultado[0]).map((coluna) => (
+                      <TableHead key={coluna}>{coluna}</TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {resultado.map((linha, indice) => (
+                    <TableRow key={indice}>
+                      {Object.keys(resultado[0]).map((coluna) => (
+                        <TableCell key={coluna}>{celula(linha[coluna])}</TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ))}
         </CardContent>
       </Card>
     </PageContainer>
