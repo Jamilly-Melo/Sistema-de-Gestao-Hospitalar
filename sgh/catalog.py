@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sgh.queries import analiticas, basicas, crud, etapa2
+from sgh.queries import analiticas, avancadas, basicas, crud, etapa2
 
 CATALOGO: dict[str, dict[str, dict[str, Any]]] = {
     "Consultas básicas": {
@@ -185,9 +185,43 @@ CATALOGO: dict[str, dict[str, dict[str, Any]]] = {
             "fn": etapa2.tempo_medio_espera,
         },
     },
+    "Consultas avançadas": {
+        "Preceptores de pacientes flamenguistas": {
+            "description": (
+                "Preceptores que supervisionaram residentes que atenderam "
+                "pacientes flamenguistas."
+            ),
+            "params": [],
+            "mutates": False,
+            "fn": avancadas.preceptores_de_pacientes_flamenguistas,
+        },
+        "Último atendimento por paciente": {
+            "description": (
+                "Para cada paciente: data, residente, preceptor e procedimentos "
+                "do último atendimento. Carregada por relacionamentos com eager "
+                "loading."
+            ),
+            "params": [],
+            "mutates": False,
+            "fn": avancadas.ultimo_atendimento_por_paciente,
+        },
+        "Percentual de procedimentos de risco alto": {
+            "description": (
+                "Percentual de procedimentos de nível ALTO sobre o total, por "
+                "residente."
+            ),
+            "params": [],
+            "mutates": False,
+            "fn": avancadas.percentual_procedimentos_risco_alto,
+        },
+    },
 }
 
-CATEGORIAS_RELATORIO: tuple[str, ...] = ("Consultas analíticas", "Etapa 2")
+CATEGORIAS_RELATORIO: tuple[str, ...] = (
+    "Consultas analíticas",
+    "Etapa 2",
+    "Consultas avançadas",
+)
 """Categorias do CATALOGO expostas via /relatorios na API.
 
 "Consultas básicas" e "CRUD" ficam de fora: as básicas são consumidas

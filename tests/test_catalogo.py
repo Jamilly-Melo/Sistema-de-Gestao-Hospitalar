@@ -15,8 +15,8 @@ ENTRADAS = [
 ]
 
 
-def test_catalogo_tem_as_catorze_entradas():
-    assert len(ENTRADAS) == 14
+def test_catalogo_tem_as_dezessete_entradas():
+    assert len(ENTRADAS) == 17
 
 
 @pytest.mark.parametrize("categoria,nome,entrada", ENTRADAS)
@@ -74,6 +74,29 @@ def test_operacoes_de_escrita_executam(session_revertida):
 def test_categorias_relatorio_existem_no_catalogo():
     from sgh.catalog import CATALOGO, CATEGORIAS_RELATORIO
 
-    assert CATEGORIAS_RELATORIO == ("Consultas analíticas", "Etapa 2")
+    assert CATEGORIAS_RELATORIO == (
+        "Consultas analíticas",
+        "Etapa 2",
+        "Consultas avançadas",
+    )
     for categoria in CATEGORIAS_RELATORIO:
         assert categoria in CATALOGO
+
+
+def test_consultas_avancadas_estao_expostas_como_relatorio():
+    from sgh.catalog import CATALOGO, CATEGORIAS_RELATORIO
+
+    assert "Consultas avançadas" in CATALOGO
+    assert "Consultas avançadas" in CATEGORIAS_RELATORIO
+
+    esperadas = {
+        "Preceptores de pacientes flamenguistas",
+        "Último atendimento por paciente",
+        "Percentual de procedimentos de risco alto",
+    }
+    assert set(CATALOGO["Consultas avançadas"]) == esperadas
+
+    for entrada in CATALOGO["Consultas avançadas"].values():
+        assert entrada["mutates"] is False
+        assert entrada["params"] == []
+        assert callable(entrada["fn"])
