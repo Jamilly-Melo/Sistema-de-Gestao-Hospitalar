@@ -95,7 +95,7 @@ export default function ReajustarEscalaPage() {
           turno_destino: turnoDestino,
         }),
       });
-      router.push("/escalas");
+      router.push(`/escalas?ok=${encodeURIComponent("Escala reajustada com sucesso.")}`);
     } catch (excecao) {
       setErro(excecao instanceof ApiError ? excecao.message : "Erro inesperado.");
     }

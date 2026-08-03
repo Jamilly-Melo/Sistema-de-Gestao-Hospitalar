@@ -90,7 +90,9 @@ export default function NovoAtendimentoPage() {
           ],
         }),
       });
-      router.push("/atendimentos");
+      router.push(
+        `/atendimentos?ok=${encodeURIComponent("Atendimento registrado com sucesso.")}`
+      );
     } catch (excecao) {
       setErro(excecao instanceof ApiError ? excecao.message : "Erro inesperado.");
     }

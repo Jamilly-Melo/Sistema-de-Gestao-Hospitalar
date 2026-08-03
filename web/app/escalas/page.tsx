@@ -13,10 +13,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type Linha = { unidade: string | null; residente: string; total_plantoes: number };
 
-export default async function EscalasPage() {
+export default async function EscalasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [chave: string]: string | string[] | undefined }>;
+}) {
+  const ok = (await searchParams).ok;
+  const mensagem = typeof ok === "string" ? ok : null;
   const linhas = await apiFetch<Linha[]>("/escalas");
 
   return (
@@ -30,6 +37,11 @@ export default async function EscalasPage() {
           </Link>
         }
       />
+      {mensagem && (
+        <Alert variant="success" className="mb-6">
+          <AlertDescription>{mensagem}</AlertDescription>
+        </Alert>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Plantões</CardTitle>

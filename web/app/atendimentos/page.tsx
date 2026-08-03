@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type Linha = {
   id_atendimento: number;
@@ -47,7 +48,13 @@ function agrupar(linhas: Linha[]): Atendimento[] {
   return [...mapa.values()].sort((a, b) => a.id_atendimento - b.id_atendimento);
 }
 
-export default async function AtendimentosPage() {
+export default async function AtendimentosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [chave: string]: string | string[] | undefined }>;
+}) {
+  const ok = (await searchParams).ok;
+  const mensagem = typeof ok === "string" ? ok : null;
   const atendimentos = agrupar(await apiFetch<Linha[]>("/atendimentos"));
 
   return (
@@ -61,6 +68,11 @@ export default async function AtendimentosPage() {
           </Link>
         }
       />
+      {mensagem && (
+        <Alert variant="success" className="mb-6">
+          <AlertDescription>{mensagem}</AlertDescription>
+        </Alert>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Lista de atendimentos</CardTitle>

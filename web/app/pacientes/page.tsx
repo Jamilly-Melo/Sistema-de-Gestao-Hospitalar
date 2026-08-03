@@ -12,10 +12,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type Linha = { id_pessoa: number; nome: string; data_hora: string | null };
 
-export default async function PacientesPage() {
+export default async function PacientesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [chave: string]: string | string[] | undefined }>;
+}) {
+  const ok = (await searchParams).ok;
+  const mensagem = typeof ok === "string" ? ok : null;
   const linhas = await apiFetch<Linha[]>("/pacientes/listagem");
 
   return (
@@ -24,6 +31,11 @@ export default async function PacientesPage() {
         titulo="Pacientes"
         descricao="Pacientes cadastrados e a data do último atendimento."
       />
+      {mensagem && (
+        <Alert variant="success" className="mb-6">
+          <AlertDescription>{mensagem}</AlertDescription>
+        </Alert>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Lista de pacientes</CardTitle>

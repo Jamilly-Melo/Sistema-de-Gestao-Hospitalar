@@ -38,7 +38,9 @@ export default function EditarPacientePage() {
         method: "PATCH",
         body: JSON.stringify({ campo, valor }),
       });
-      router.push("/pacientes");
+      router.push(
+        `/pacientes?ok=${encodeURIComponent("Cadastro do paciente atualizado.")}`
+      );
     } catch (excecao) {
       setErro(excecao instanceof ApiError ? excecao.message : "Erro inesperado.");
     }
