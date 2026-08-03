@@ -35,6 +35,10 @@ class Atendimento(Base):
     )
 
     paciente: Mapped["Paciente"] = relationship(back_populates="atendimentos")
+    # Sem back_populates: Residente e Preceptor não precisam da volta, e uma
+    # relação unidirecional evita ter de mexer em sgh/models/pessoas.py.
+    residente: Mapped["Residente"] = relationship()
+    preceptor: Mapped["Preceptor"] = relationship()
     procedimentos: Mapped[list["ProcedimentoRealizado"]] = relationship(
         back_populates="atendimento", passive_deletes=True
     )
@@ -68,6 +72,7 @@ class ProcedimentoRealizado(Base):
     data_hora_inicio: Mapped[datetime]
 
     atendimento: Mapped["Atendimento"] = relationship(back_populates="procedimentos")
+    procedimento: Mapped["Procedimento"] = relationship()
 
     __table_args__ = (
         CheckConstraint("quantidade > 0", name="ck_procedimento_realizado_quantidade"),

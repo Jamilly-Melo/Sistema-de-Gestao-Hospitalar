@@ -72,3 +72,37 @@ def test_procedimento_de_risco_alto():
     with SessionLocal() as session:
         assert session.get(Procedimento, 5).nivel_risco == "ALTO"
         assert session.get(Procedimento, 1).nivel_risco == "BAIXO"
+
+
+def test_atendimento_navega_ate_o_nome_do_residente_e_do_preceptor():
+    """As FKs id_residente/id_preceptor precisam de relationship para a
+    consulta de último atendimento navegar até os nomes."""
+    from sqlalchemy import select
+
+    from sgh.database import SessionLocal
+    from sgh.models import Atendimento
+
+    with SessionLocal() as sessao:
+        atendimento = sessao.execute(
+            select(Atendimento).order_by(Atendimento.id_atendimento)
+        ).scalars().first()
+        assert atendimento is not None, "o seed deveria ter atendimentos"
+        assert isinstance(atendimento.residente.profissional.pessoa.nome, str)
+        assert isinstance(atendimento.preceptor.profissional.pessoa.nome, str)
+
+
+def test_procedimento_realizado_navega_ate_o_procedimento():
+    """A FK id_procedimento precisa de relationship para listar os nomes dos
+    procedimentos de um atendimento sem JOIN manual."""
+    from sqlalchemy import select
+
+    from sgh.database import SessionLocal
+    from sgh.models import ProcedimentoRealizado
+
+    with SessionLocal() as sessao:
+        realizado = sessao.execute(
+            select(ProcedimentoRealizado)
+        ).scalars().first()
+        assert realizado is not None, "o seed deveria ter procedimentos realizados"
+        assert isinstance(realizado.procedimento.nome, str)
+        assert realizado.procedimento.nivel_risco in {"BAIXO", "MEDIO", "ALTO"}
