@@ -171,7 +171,8 @@ def test_plantoes_do_residente_inexistente_devolve_lista_vazia():
 
 
 def test_plantoes_do_residente_filtra_pelo_residente_pedido():
-    """Somando os plantões de todos os residentes chega-se ao total de escalas."""
+    """Somando os plantões de todos os residentes chega-se ao total de escalas
+    ainda por vir."""
     from sgh.database import SessionLocal
     from sgh.models import Escala
     from sqlalchemy import func, select
@@ -179,10 +180,39 @@ def test_plantoes_do_residente_filtra_pelo_residente_pedido():
     from sgh.queries import basicas
 
     with SessionLocal() as sessao:
-        total = sessao.execute(select(func.count(Escala.id_escala))).scalar_one()
+        total = sessao.execute(
+            select(func.count(Escala.id_escala)).where(
+                Escala.data_plantao >= func.current_date()
+            )
+        ).scalar_one()
 
     soma = sum(
         len(lookups.plantoes_do_residente(r["id"]))
         for r in basicas.media_atendimentos_por_residente()
     )
     assert soma == total
+
+
+def test_plantoes_do_residente_nao_oferece_plantao_ja_realizado():
+    """A tela de reajuste move um plantão para outra data — oferecer um que já
+    aconteceu convida a remarcar o passado."""
+    from datetime import date
+
+    from sgh.database import SessionLocal
+    from sgh.models import Escala
+    from sqlalchemy import func, select
+
+    from sgh.queries import basicas
+
+    with SessionLocal() as sessao:
+        passados = sessao.execute(
+            select(func.count(Escala.id_escala)).where(
+                Escala.data_plantao < func.current_date()
+            )
+        ).scalar_one()
+    assert passados > 0, "sem plantão passado no seed, este teste não prova nada"
+
+    hoje = date.today()
+    for residente in basicas.media_atendimentos_por_residente():
+        for plantao in lookups.plantoes_do_residente(residente["id"]):
+            assert plantao["data_plantao"] >= hoje

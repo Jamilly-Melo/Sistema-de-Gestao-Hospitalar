@@ -140,7 +140,7 @@ export default function ReajustarEscalaPage() {
                 </p>
               ) : plantoes.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Este residente não tem nenhum plantão escalado.
+                  Este residente não tem plantão futuro para remarcar.
                 </p>
               ) : (
                 <Select

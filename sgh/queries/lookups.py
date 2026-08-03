@@ -177,12 +177,17 @@ def listar_pacientes_com_ultimo_atendimento(
 def plantoes_do_residente(
     id_residente: int, *, session: Session | None = None
 ) -> list[dict[str, Any]]:
-    """Plantões escalados de um residente, para popular o campo de origem do
+    """Plantões de um residente ainda por vir, para popular o campo de origem do
     reajuste de escala.
 
     Existe para a tela poder oferecer os plantões que o residente de fato tem,
     em vez de pedir data e turno digitados — que falham silenciosamente quando
     não existe plantão naquela combinação.
+
+    O corte em CURRENT_DATE é o que define "remarcável": mover um plantão que já
+    aconteceu não é reajuste de escala, é reescrita de histórico. Note que isso
+    difere do painel /escalas, que conta o mês corrente inteiro — lá o passado
+    recente ainda importa como registro; aqui, não.
     """
     stmt = (
         select(
@@ -193,7 +198,10 @@ def plantoes_do_residente(
         )
         .select_from(Escala)
         .join(Unidade, Unidade.id_unidade == Escala.id_unidade)
-        .where(Escala.id_residente == id_residente)
+        .where(
+            Escala.id_residente == id_residente,
+            Escala.data_plantao >= func.current_date(),
+        )
         .order_by(Escala.data_plantao.asc(), Escala.turno.asc())
     )
     return fetch_all(stmt, session=session)
